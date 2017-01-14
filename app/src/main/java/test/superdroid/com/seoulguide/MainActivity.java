@@ -22,7 +22,7 @@ import test.superdroid.com.seoulguide.Map.MapFragment;
 import test.superdroid.com.seoulguide.Planner.PlannerFragment;
 import test.superdroid.com.seoulguide.Prefer.PreferFragment;
 import test.superdroid.com.seoulguide.Tag.TagFragment;
-
+/* develop*/
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, View.OnFocusChangeListener {
 
