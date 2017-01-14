@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">SeoulGuide</string>
+    <string name="menuHome">홈</string>
+    <string name="menuTag">태그별 보기</string>
+    <string name="menuPrefer">사용자 성향</string>
+    <string name="menuBucket">버킷리스트</string>
+    <string name="menuPlanner">여행 플래너</string>
+    <string name="menuMap">지도</string>
+    <string name="menuSetting">설정</string>
+    <string name="drawerOpen">Drawer Open</string>
+    <string name="drawerClose">Drawer Close</string>
+    <string name="searchView">검색</string>
+
+</resources>
