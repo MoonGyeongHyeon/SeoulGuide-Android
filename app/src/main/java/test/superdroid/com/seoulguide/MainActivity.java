@@ -1,6 +1,7 @@
 package test.superdroid.com.seoulguide;
 
 import android.support.annotation.NonNull;
+import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -61,6 +62,8 @@ public class MainActivity extends AppCompatActivity
 
         mSearchMenuItem = menu.findItem(R.id.searchView);
         SearchView searchView = (SearchView) mSearchMenuItem.getActionView();
+        searchView.setQueryHint("여행지 입력");
+        searchView.setOnQueryTextFocusChangeListener(this);
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
