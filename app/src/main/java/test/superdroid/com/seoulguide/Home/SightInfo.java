@@ -1,11 +1,22 @@
 package test.superdroid.com.seoulguide.Home;
 
+import android.graphics.Bitmap;
+
 public class SightInfo {
+    int id;
     int rank;
-    int picture;
+    Bitmap picture;
     double rating;
     int likeCount;
     String name;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public int getRank() {
         return rank;
@@ -15,11 +26,11 @@ public class SightInfo {
         this.rank = rank;
     }
 
-    public int getPicture() {
+    public Bitmap getPicture() {
         return picture;
     }
 
-    public void setPicture(int picture) {
+    public void setPicture(Bitmap picture) {
         this.picture = picture;
     }
 

@@ -29,12 +29,12 @@ public class MainActivity extends AppCompatActivity
 
     private DrawerLayout mDrawerLayout;
     private MenuItem mSearchMenuItem;
-    private String MENU_HOME = "Menu Home";
-    private String MENU_TAG = "Menu Tag";
-    private String MENU_PREFER = "Menu Prefer";
-    private String MENU_BUCKET = "Menu Bucket";
-    private String MENU_PLANNER = "Menu Planner";
-    private String MENU_MAP = "Menu Map";
+    private String menuHome = "Menu Home";
+    private String menuTag = "Menu Tag";
+    private String menuPrefer = "Menu Prefer";
+    private String menuBucket = "Menu Bucket";
+    private String menuPlanner = "Menu Planner";
+    private String menuMap = "Menu Map";
 
 
     @Override
@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity
         mDrawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
-        getSupportFragmentManager().beginTransaction().add(R.id.fragmentComponentLayout, new HomeFragment(), MENU_HOME).commit();
+        getSupportFragmentManager().beginTransaction().add(R.id.fragmentComponentLayout, new HomeFragment(), menuHome).commit();
     }
 
     @Override
@@ -100,45 +100,45 @@ public class MainActivity extends AppCompatActivity
 
         switch(item.getItemId()) {
             case R.id.menuHome :
-                if(fragmentManager.findFragmentByTag(MENU_HOME) == null) {
+                if(fragmentManager.findFragmentByTag(menuHome) == null) {
                     Log.d("LOG/MainActivity", "Fragment Home is selected");
                     fragment = new HomeFragment();
-                    tag = MENU_HOME;
+                    tag = menuHome;
                 }
                 break;
             case R.id.menuTag :
-                if(fragmentManager.findFragmentByTag(MENU_TAG) == null) {
+                if(fragmentManager.findFragmentByTag(menuTag) == null) {
                     Log.d("LOG/MainActivity", "Fragment Tag is selected");
                     fragment = new TagFragment();
-                    tag = MENU_TAG;
+                    tag = menuTag;
                 }
                 break;
             case R.id.menuPrefer :
-                if(fragmentManager.findFragmentByTag(MENU_PREFER) == null) {
+                if(fragmentManager.findFragmentByTag(menuPrefer) == null) {
                     Log.d("LOG/MainActivity", "Fragment Prefer is selected");
                     fragment = new PreferFragment();
-                    tag = MENU_PREFER;
+                    tag = menuPrefer;
                 }
                 break;
             case R.id.menuBucket :
-                if(fragmentManager.findFragmentByTag(MENU_BUCKET) == null) {
+                if(fragmentManager.findFragmentByTag(menuBucket) == null) {
                     Log.d("LOG/MainActivity", "Fragment Prefer is selected");
                     fragment = new BucketFragment();
-                    tag = MENU_BUCKET;
+                    tag = menuBucket;
                 }
                 break;
             case R.id.menuPlanner :
-                if(fragmentManager.findFragmentByTag(MENU_PLANNER) == null) {
+                if(fragmentManager.findFragmentByTag(menuPlanner) == null) {
                     Log.d("LOG/MainActivity", "Fragment Prefer is selected");
                     fragment = new PlannerFragment();
-                    tag = MENU_PLANNER;
+                    tag = menuPlanner;
                 }
                 break;
             case R.id.menuMap :
-                if(fragmentManager.findFragmentByTag(MENU_MAP) == null) {
+                if(fragmentManager.findFragmentByTag(menuMap) == null) {
                     Log.d("LOG/MainActivity", "Fragment Prefer is selected");
                     fragment = new MapFragment();
-                    tag = MENU_MAP;
+                    tag = menuMap;
                 }
                 break;
             default :
