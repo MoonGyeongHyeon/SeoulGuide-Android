@@ -1,7 +1,9 @@
 package test.superdroid.com.seoulguide.Home;
 
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,27 +13,30 @@ import android.widget.TextView;
 
 import java.util.List;
 
+import test.superdroid.com.seoulguide.Detail.SightDetailFragment;
 import test.superdroid.com.seoulguide.R;
 
 public class RankingRecyclerViewAdapter extends RecyclerView.Adapter<RankingRecyclerViewAdapter.ViewHolder>{
 
-    private List<SightInfo> list;
-    private int itemLayout;
+    private List<SightInfo> mList;
+    private int mItemLayout;
+    private Fragment mFragment;
 
-    public RankingRecyclerViewAdapter(List<SightInfo> list, int itemLayout) {
-        this.list = list;
-        this.itemLayout = itemLayout;
+    public RankingRecyclerViewAdapter(List<SightInfo> list, int itemLayout, Fragment fragment) {
+        this.mList = list;
+        this.mItemLayout = itemLayout;
+        this.mFragment = fragment;
     }
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(itemLayout, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(mItemLayout, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        SightInfo sightInfo = list.get(position);
+        final SightInfo sightInfo = mList.get(position);
         holder.rank.setText(String.valueOf(sightInfo.getRank()));
         holder.rating.setText(String.valueOf(sightInfo.getRating()));
         holder.likeCount.setText(String.valueOf(sightInfo.getLikeCount()));
@@ -47,11 +52,28 @@ public class RankingRecyclerViewAdapter extends RecyclerView.Adapter<RankingRecy
             holder.picture.setVisibility(View.GONE);
             holder.imageLoading.setVisibility(View.VISIBLE);
         }
+
+        holder.cardView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // CardView를 클릭했을 때 이동시킬 Fragment 생성.
+                SightDetailFragment sightDetailFragment = new SightDetailFragment();
+                Bundle bundle = new Bundle();
+                // Bundle에 상세정보를 볼 여행지의 아이디를 설정.
+                bundle.putInt("sightId", sightInfo.getId());
+                sightDetailFragment.setArguments(bundle);
+
+                mFragment.getActivity().getSupportFragmentManager()
+                        .beginTransaction().replace(R.id.fragmentComponentLayout, sightDetailFragment)
+                        .addToBackStack(null)
+                        .commit();
+            }
+        });
     }
 
     @Override
     public int getItemCount() {
-        return list.size();
+        return mList.size();
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
@@ -61,6 +83,7 @@ public class RankingRecyclerViewAdapter extends RecyclerView.Adapter<RankingRecy
         TextView likeCount;
         TextView name;
         ProgressBar imageLoading;
+        CardView cardView;
 
         public ViewHolder(View itemView) {
             super(itemView);
@@ -71,6 +94,7 @@ public class RankingRecyclerViewAdapter extends RecyclerView.Adapter<RankingRecy
             likeCount = (TextView) itemView.findViewById(R.id.homeSightLikeCountTextView);
             name = (TextView) itemView.findViewById(R.id.homeSightNameTextView);
             imageLoading = (ProgressBar) itemView.findViewById(R.id.homeImageLoadingProgressBar);
+            cardView = (CardView) itemView.findViewById(R.id.homeRankingCardView);
         }
     }
 }

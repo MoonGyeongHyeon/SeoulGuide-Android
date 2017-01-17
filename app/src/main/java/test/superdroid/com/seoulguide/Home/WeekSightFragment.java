@@ -34,7 +34,7 @@ import test.superdroid.com.seoulguide.Util.SharedData;
 public class WeekSightFragment extends Fragment {
 
     // RecyclerView로부터 출력시킬 SightInfo List.
-    private List<SightInfo> mList = new ArrayList<>();
+    private List<SightInfo> mList;
     // DB로부터 데이터를 받아오는 데 받아올 시작 순위. 예를 들어 값이 0일 경우 1위부터 가져오며, 5일 경우 6위부터 가져옴.
     private int startNumber = 0;
     // DB로부터 가져올 데이터의 개수.
@@ -45,6 +45,8 @@ public class WeekSightFragment extends Fragment {
     private final String phpName = "/new/Sight1000GetData.php";
     // 서버에 존재하는 이미지의 주소를 Bitmap 객체로 바꿔줄 객체.
     private BitmapConverter mConverter;
+    // 여행지 정보를 가져올 객체.
+    private SightInfoManager mSightInfoManager;
 
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -52,7 +54,7 @@ public class WeekSightFragment extends Fragment {
 
         loadData();
 
-        mAdapter = new RankingRecyclerViewAdapter(mList, R.layout.i_home_ranking);
+        mAdapter = new RankingRecyclerViewAdapter(mList, R.layout.i_home_ranking, this);
         RecyclerView recyclerView = (RecyclerView) layout.findViewById(R.id.weekRankingRecyclerView);
         recyclerView.setAdapter(mAdapter);
 
@@ -65,22 +67,37 @@ public class WeekSightFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
+        Log.d("LOG/Week", "onPause()");
         // 만약 Converter가 변환을 진행 중인데 이 프래그먼트가 종료될 경우 변환 작업을 중단시킴.
         if(mConverter != null)
-            if(!mConverter.isCancelled())
-                mConverter.cancel(false);
+            if(!mConverter.isCancelled()) {
+                Log.d("LOG/Week", "BitmapConverter cancelled");
+                mConverter.cancel(true);
+            }
+
+        // SightInfoManager가 진행 중일 경우 중단시킴.
+        if(mSightInfoManager != null)
+            if(!mSightInfoManager.isCancelled()) {
+                Log.d("LOG/Week", "SIghtInfoManager cancelled");
+                mSightInfoManager.cancel(true);
+            }
     }
 
+
     private void loadData() {
+        Log.d("LOG/Week", "loadData()");
+
+        mList = new ArrayList<>();
+
         // 인터넷 연결 확인.
         if(Network.isNetworkConnected(getContext())) {
             // 쿼리를 완성시킴.
             String query = "?start_number=" + String.valueOf(startNumber) + "&data_count=" + String.valueOf(dataCount);
-            SightInfoManager sightInfoManager = new SightInfoManager();
-
             String serverIP = SharedData.getServerIP();
+
+            mSightInfoManager = new SightInfoManager();
             // DB로부터 데이터를 받아옴.
-            sightInfoManager.execute(serverIP + phpName + query);
+            mSightInfoManager.execute(serverIP + phpName + query);
         } else {
             Toast.makeText(getActivity(), "인터넷 연결을 확인해주세요.", Toast.LENGTH_LONG).show();
         }
@@ -90,6 +107,7 @@ public class WeekSightFragment extends Fragment {
 
         @Override
         protected String doInBackground(String... params) {
+            Log.d("LOG/Week", "start SightInfoManager doInBackground");
             StringBuilder jsonHtml = new StringBuilder();
             try{
                 // 연결 url 설정
@@ -122,6 +140,7 @@ public class WeekSightFragment extends Fragment {
 
         @Override
         protected void onPostExecute(String result) {
+            Log.d("LOG/Week", "start SightInfoManager onPostExecute");
             // DB에 저장된 이미지의 경로를 따로 List에 저장시킴.
             // 이 List의 값을 바탕으로 Bitmap으로 변환시킴.
             List<String> urlList = new ArrayList<>();
@@ -158,9 +177,13 @@ public class WeekSightFragment extends Fragment {
                 }
                 // 이미지를 제외한 여행지의 정보를 업데이트함.
                 mAdapter.notifyDataSetChanged();
-                mConverter = new BitmapConverter();
-                // 인수로 이미지의 경로가 저장되어 있는 List를 넘김.
-                mConverter.execute(urlList);
+
+                // 만약 SightInfoManager가 중단됐을 경우 Converter도 호출되지 않아야 함.
+                if(!isCancelled()) {
+                    mConverter = new BitmapConverter();
+                    // 인수로 이미지의 경로가 저장되어 있는 List를 넘김.
+                    mConverter.execute(urlList);
+                }
 
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -173,15 +196,18 @@ public class WeekSightFragment extends Fragment {
     private class BitmapConverter extends AsyncTask<Object, Object, Object> {
         @Override
         protected Object doInBackground(Object... params) {
+            Log.d("LOG/Week", "start BitmapConverter doInBackground");
             // 이미지의 경로가 저장되어 있는 list.
             List<String> list = (List<String>) params[0];
             Bitmap bitmap;
             URL newurl;
             for(int i=startNumber; i<mList.size(); i++) {
                 // 만약 프래그먼트의 종료 등으로 인해 변환 작업을 중지시켜야 할 경우.
-                if(isCancelled())
-                    return null;
                 try {
+                    if(isCancelled()) {
+                        Log.d("LOG/Week", "break BitmapConverter doInBackground");
+                        return null;
+                    }
                     newurl = new URL(list.get(i));
                     bitmap = BitmapFactory.decodeStream(newurl.openConnection().getInputStream());
                     // 하나의 이미지 변환 작업이 종료될 경우 호출.
@@ -197,6 +223,7 @@ public class WeekSightFragment extends Fragment {
         }
         @Override
         protected void onProgressUpdate(Object... values) {
+            Log.d("LOG/Week", "start BitmapConverter onProgressUpdate");
             // 변환된 Bitmap.
             Bitmap bitmap = (Bitmap) values[0];
             // item의 index.

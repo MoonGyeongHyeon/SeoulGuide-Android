@@ -31,14 +31,15 @@
                 android:layout_height="match_parent"
                 android:layout_weight="68"
                 android:weightSum="100"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:layout_marginTop="8dp">
 
                 <ImageView
                     android:id="@+id/homeSightPictureImageView"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
                     android:scaleType="fitXY"
-                    android:layout_weight="85"/>
+                    android:layout_weight="85" />
 
                 <ProgressBar
                     android:id="@+id/homeImageLoadingProgressBar"
