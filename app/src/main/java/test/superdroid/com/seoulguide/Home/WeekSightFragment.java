@@ -26,6 +26,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import test.superdroid.com.seoulguide.R;
 import test.superdroid.com.seoulguide.Util.Network;
@@ -34,29 +35,70 @@ import test.superdroid.com.seoulguide.Util.SharedData;
 public class WeekSightFragment extends Fragment {
 
     // RecyclerView로부터 출력시킬 SightInfo List.
-    private List<SightInfo> mList;
+    private List<SightInfo> mSightInfoList;
+    // 이미지의 경로를 가지고 있는 urlList. Bitmap으로 변환하는 과정에서 쓰인다.
+    private List<String> mUrlList;
     // DB로부터 데이터를 받아오는 데 받아올 시작 순위. 예를 들어 값이 0일 경우 1위부터 가져오며, 5일 경우 6위부터 가져옴.
-    private int startNumber = 0;
+    private int startNumber;
     // DB로부터 가져올 데이터의 개수.
-    private int dataCount = 10;
+    private int dataCount;
     // RecyclerView에 설정할 Adapter 객체.
     private RankingRecyclerViewAdapter mAdapter;
-    // 서버에서 사용할 PHP 파일의 이름.
-    private final String phpName = "/new/Sight1000GetData.php";
     // 서버에 존재하는 이미지의 주소를 Bitmap 객체로 바꿔줄 객체.
     private BitmapConverter mConverter;
     // 여행지 정보를 가져올 객체.
     private SightInfoManager mSightInfoManager;
 
+
+
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View layout = inflater.inflate(R.layout.f_week_sight, container, false);
 
+        // 1위부터 10개의 데이터를 가져오게 변수 초기화.
+        startNumber = 0;
+        dataCount = 10;
+
+        // 여기서 생성을 하는 이유로, 다른 프래그먼트로 이동했다가 다시 돌아올 경우 List의 값을 초기화 해야하기 때문.
+        // 코드를 약간 수정해서 clear() 메서드를 사용해도 무관할 듯 하다.
+        mSightInfoList = new ArrayList<>();
+        mUrlList = new ArrayList<>();
+
+        // 여기서 생성을 하는 이유로, 다른 프래그먼트로 이동했다가 다시 돌아올 경우 cancel 값을 초기화 해야하기 때문.
+        mConverter = new BitmapConverter();
+
         loadData();
 
-        mAdapter = new RankingRecyclerViewAdapter(mList, R.layout.i_home_ranking, this);
+        mAdapter = new RankingRecyclerViewAdapter(mSightInfoList, R.layout.i_home_ranking, this);
         RecyclerView recyclerView = (RecyclerView) layout.findViewById(R.id.weekRankingRecyclerView);
         recyclerView.setAdapter(mAdapter);
+
+        //최하단 아이템에 도달했을 때, 추가로 여행지 데이터를 받아와 이어서 출력.
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                // 스크롤을 드래그할 때 동작하도록.
+                if(newState == RecyclerView.SCROLL_STATE_DRAGGING) {
+                    RecyclerView.LayoutManager manager = recyclerView.getLayoutManager();
+                    // 현재 화면에서 보이는 아이템의 가장 마지막 position을 가져옴.
+                    int lastPosition = ((LinearLayoutManager) manager).findLastVisibleItemPosition();
+                    // 그 position이 최하단의 아이템일 경우
+                    if(lastPosition == (mSightInfoList.size()-1) && startNumber+dataCount == mSightInfoList.size()) {
+                        // 최대 30위까지만 보여주도록 제한.
+                        if(startNumber+dataCount < SharedData.MAX_HOME_DATA_COUNT) {
+                            Log.d("LOG/HomeWeek", "startNumber : " + startNumber);
+                            // 가져올 데이터의 시작 번호를 변경.
+                            startNumber = mSightInfoList.size();
+                            // 가져올 데이터의 수를 5개로 지정.
+                            dataCount = 5;
+                            //데이터를 가져옴.
+                            loadData();
+                            Log.d("LOG/HomeWeek", "Last Position : " + lastPosition);
+                        }
+                    }
+                }
+            }
+        });
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         recyclerView.setLayoutManager(layoutManager);
@@ -67,37 +109,37 @@ public class WeekSightFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        Log.d("LOG/Week", "onPause()");
+        Log.d("LOG/HomeWeek", "onPause()");
         // 만약 Converter가 변환을 진행 중인데 이 프래그먼트가 종료될 경우 변환 작업을 중단시킴.
         if(mConverter != null)
             if(!mConverter.isCancelled()) {
-                Log.d("LOG/Week", "BitmapConverter cancelled");
+                Log.d("LOG/HomeWeek", "BitmapConverter cancelled");
                 mConverter.cancel(true);
             }
 
         // SightInfoManager가 진행 중일 경우 중단시킴.
         if(mSightInfoManager != null)
             if(!mSightInfoManager.isCancelled()) {
-                Log.d("LOG/Week", "SIghtInfoManager cancelled");
+                Log.d("LOG/HomeWeek", "SIghtInfoManager cancelled");
                 mSightInfoManager.cancel(true);
             }
     }
 
 
     private void loadData() {
-        Log.d("LOG/Week", "loadData()");
-
-        mList = new ArrayList<>();
+        Log.d("LOG/HomeWeek", "loadData()");
 
         // 인터넷 연결 확인.
         if(Network.isNetworkConnected(getContext())) {
             // 쿼리를 완성시킴.
             String query = "?start_number=" + String.valueOf(startNumber) + "&data_count=" + String.valueOf(dataCount);
-            String serverIP = SharedData.getServerIP();
+
+            // 서버에서 사용할 PHP 파일의 이름.
+            String phpName = "/new/Sight1000GetData.php";
 
             mSightInfoManager = new SightInfoManager();
             // DB로부터 데이터를 받아옴.
-            mSightInfoManager.execute(serverIP + phpName + query);
+            mSightInfoManager.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,SharedData.SERVER_IP + phpName + query);
         } else {
             Toast.makeText(getActivity(), "인터넷 연결을 확인해주세요.", Toast.LENGTH_LONG).show();
         }
@@ -107,7 +149,7 @@ public class WeekSightFragment extends Fragment {
 
         @Override
         protected String doInBackground(String... params) {
-            Log.d("LOG/Week", "start SightInfoManager doInBackground");
+            Log.d("LOG/HomeWeek", "start SightInfoManager doInBackground");
             StringBuilder jsonHtml = new StringBuilder();
             try{
                 // 연결 url 설정
@@ -140,10 +182,9 @@ public class WeekSightFragment extends Fragment {
 
         @Override
         protected void onPostExecute(String result) {
-            Log.d("LOG/Week", "start SightInfoManager onPostExecute");
+            Log.d("LOG/HomeWeek", "start SightInfoManager onPostExecute");
             // DB에 저장된 이미지의 경로를 따로 List에 저장시킴.
             // 이 List의 값을 바탕으로 Bitmap으로 변환시킴.
-            List<String> urlList = new ArrayList<>();
             try {
                 JSONObject root = new JSONObject(result);
                 JSONArray ja = root.getJSONArray("result");
@@ -157,32 +198,43 @@ public class WeekSightFragment extends Fragment {
                     double sumPoint = jo.getDouble("sum_point");
                     int peopleCount = jo.getInt("p_count");
 
-                    // mList에 추가하기 위해 SightInfo 객체 생성 및 필드 설정.
+                    // mSightInfoList에 추가하기 위해 SightInfo 객체 생성 및 필드 설정.
                     SightInfo sightInfo = new SightInfo();
                     sightInfo.setId(id);
                     sightInfo.setName(name);
-                    sightInfo.setRank(i + 1);
+                    // 데이터가 추가 로드될 때 순위를 표시하기 위해 startNumber를 더해줌.
+                    sightInfo.setRank(i + startNumber + 1);
                     sightInfo.setLikeCount(recommendCount);
                     // 별점을 구하는 데 만약 총점이 0이거나 평가자가 없을 경우 0.0으로 설정.
                     if (sumPoint == 0 || peopleCount == 0)
                         sightInfo.setRating(0.0);
-                    else
-                        sightInfo.setRating(sumPoint / peopleCount);
+                    else {
+                        // 순환소수가 나올 수 있으므로 둘째 자리에서 반올림.
+                        String avgStr = String.format(Locale.getDefault() ,"%.1f", sumPoint / peopleCount);
+                        sightInfo.setRating(Double.valueOf(avgStr));
+                    }
 
-                    mList.add(sightInfo);
+                    mSightInfoList.add(sightInfo);
 
-                    String serverIP = SharedData.getServerIP();
-                    urlList.add(serverIP + thumbnail);
-                    Log.d("LOG/HomeWeek", "get SightInfo " + sightInfo.getName());
+                    mUrlList.add(SharedData.SERVER_IP + thumbnail);
+                    Log.d("LOG/HomeWeek", "get SightInfo : " + sightInfo.getName() + ", Ranking : " + sightInfo.getRank());
                 }
                 // 이미지를 제외한 여행지의 정보를 업데이트함.
                 mAdapter.notifyDataSetChanged();
 
                 // 만약 SightInfoManager가 중단됐을 경우 Converter도 호출되지 않아야 함.
                 if(!isCancelled()) {
-                    mConverter = new BitmapConverter();
+                    Log.d("LOG/HomeWeek", "BitmapConverter is called");
+                    Log.d("LOG/HomeWeek", "BitmapConverter status : " + mConverter.getStatus());
+                    if(mConverter.getStatus() == Status.FINISHED) {
+                        // 만약 BitmapConverter가 FINISHED 상태이면 재생성시킴.
+                        Log.d("LOG/HomeWeek", "BitmapConverter is finished and recreated");
+                        mConverter = new BitmapConverter();
+                    }
                     // 인수로 이미지의 경로가 저장되어 있는 List를 넘김.
-                    mConverter.execute(urlList);
+                    mConverter.execute(mUrlList);
+                } else {
+                    Log.d("LOG/HomeWeek", "BitmapConverter is cancelled");
                 }
 
             } catch (JSONException e) {
@@ -196,16 +248,16 @@ public class WeekSightFragment extends Fragment {
     private class BitmapConverter extends AsyncTask<Object, Object, Object> {
         @Override
         protected Object doInBackground(Object... params) {
-            Log.d("LOG/Week", "start BitmapConverter doInBackground");
+            Log.d("LOG/HomeWeek", "start BitmapConverter doInBackground");
             // 이미지의 경로가 저장되어 있는 list.
             List<String> list = (List<String>) params[0];
             Bitmap bitmap;
             URL newurl;
-            for(int i=startNumber; i<mList.size(); i++) {
-                // 만약 프래그먼트의 종료 등으로 인해 변환 작업을 중지시켜야 할 경우.
+            for(int i=startNumber; i<mSightInfoList.size(); i++) {
                 try {
+                    // 만약 프래그먼트의 종료 등으로 인해 변환 작업을 중지시켜야 할 경우.
                     if(isCancelled()) {
-                        Log.d("LOG/Week", "break BitmapConverter doInBackground");
+                        Log.d("LOG/HomeWeek", "break BitmapConverter doInBackground");
                         return null;
                     }
                     newurl = new URL(list.get(i));
@@ -223,20 +275,20 @@ public class WeekSightFragment extends Fragment {
         }
         @Override
         protected void onProgressUpdate(Object... values) {
-            Log.d("LOG/Week", "start BitmapConverter onProgressUpdate");
+            Log.d("LOG/HomeWeek", "start BitmapConverter onProgressUpdate");
             // 변환된 Bitmap.
             Bitmap bitmap = (Bitmap) values[0];
             // item의 index.
             int index = (Integer) values[1];
 
-            // index에 해당하는 mList 원소를 가져옴.
-            SightInfo sightInfo = mList.get(index);
+            // index에 해당하는 mSightInfoList 원소를 가져옴.
+            SightInfo sightInfo = mSightInfoList.get(index);
             // 가져온 원소에 bitmap을 설정함.
             sightInfo.setPicture(bitmap);
 
             // 화면에 이미지 출력을 위해 업데이트.
             mAdapter.notifyItemChanged(index);
-            Log.d("LOG/HomeWeek", "get Bitmap " + sightInfo.getName());
+            Log.d("LOG/HomeWeek", "get Bitmap : " + sightInfo.getName()  + ", Ranking : " + sightInfo.getRank());
         }
     }
 }
