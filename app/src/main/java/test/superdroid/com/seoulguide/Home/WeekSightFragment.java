@@ -48,26 +48,30 @@ public class WeekSightFragment extends Fragment {
     private BitmapConverter mConverter;
     // 여행지 정보를 가져올 객체.
     private SightInfoManager mSightInfoManager;
-
-
+    // 이미지 변환 중인 상태에서 상세보기로 넘어갈 경우 변환 작업을 일시중지시킨다.
+    // 상세보기에서 다시 홈으로 돌아올 때 일시중지된 변환 작업을 다시 재개시킨다.
+    // 이를 위해 싱크를 맞춰줄 변수.
+    private boolean isPausedConverting = false;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View layout = inflater.inflate(R.layout.f_week_sight, container, false);
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
         // 1위부터 10개의 데이터를 가져오게 변수 초기화.
         startNumber = 0;
         dataCount = 10;
 
-        // 여기서 생성을 하는 이유로, 다른 프래그먼트로 이동했다가 다시 돌아올 경우 List의 값을 초기화 해야하기 때문.
-        // 코드를 약간 수정해서 clear() 메서드를 사용해도 무관할 듯 하다.
         mSightInfoList = new ArrayList<>();
         mUrlList = new ArrayList<>();
 
-        // 여기서 생성을 하는 이유로, 다른 프래그먼트로 이동했다가 다시 돌아올 경우 cancel 값을 초기화 해야하기 때문.
         mConverter = new BitmapConverter();
 
         loadData();
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View layout = inflater.inflate(R.layout.f_week_sight, container, false);
 
         mAdapter = new RankingRecyclerViewAdapter(mSightInfoList, R.layout.i_home_ranking, this);
         RecyclerView recyclerView = (RecyclerView) layout.findViewById(R.id.weekRankingRecyclerView);
@@ -107,24 +111,53 @@ public class WeekSightFragment extends Fragment {
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
-        Log.d("LOG/HomeWeek", "onPause()");
-        // 만약 Converter가 변환을 진행 중인데 이 프래그먼트가 종료될 경우 변환 작업을 중단시킴.
+    public void onResume() {
+        super.onResume();
+        Log.d("LOG/HomeWeek", "onResume()");
+
+        // 만약 일시중지된 이미지 변환 작업이 존재할 경우 다시 재개시킴.
+        if(mConverter.getStatus() == AsyncTask.Status.RUNNING
+                && isPausedConverting) {
+            isPausedConverting = false;
+            Log.d("LOG/HomeWeek", "isPausedConverting : " + !isPausedConverting + " -> " + isPausedConverting);
+            synchronized (mConverter) {
+                Log.d("LOG/HomeWeek", "BitmapConverter is notified");
+                mConverter.notify();
+            }
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        Log.d("LOG/HomeWeek", "onDestroyView()");
+        super.onDestroyView();
+
+        // 만약 이미지 변환 작업 중이라면 변환 작업을 일시중지 시킨다.
+        if(mConverter.getStatus() == AsyncTask.Status.RUNNING) {
+            isPausedConverting = true;
+            Log.d("LOG/HomeWeek", "isPausedConverting : " + !isPausedConverting + " -> " + isPausedConverting);
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d("LOG/HomeWeek", "onDestroy()");
+
+        // 만약 Converter가 변환을 진행 중인데 홈을 종료시킬 경우 변환 작업 역시 중단시킴.
         if(mConverter != null)
             if(!mConverter.isCancelled()) {
-                Log.d("LOG/HomeWeek", "BitmapConverter cancelled");
+                Log.d("LOG/HomeWeek", "BitmapConverter is cancelled");
                 mConverter.cancel(true);
             }
 
         // SightInfoManager가 진행 중일 경우 중단시킴.
         if(mSightInfoManager != null)
             if(!mSightInfoManager.isCancelled()) {
-                Log.d("LOG/HomeWeek", "SIghtInfoManager cancelled");
+                Log.d("LOG/HomeWeek", "SIghtInfoManager is cancelled");
                 mSightInfoManager.cancel(true);
             }
     }
-
 
     private void loadData() {
         Log.d("LOG/HomeWeek", "loadData()");
@@ -149,7 +182,7 @@ public class WeekSightFragment extends Fragment {
 
         @Override
         protected String doInBackground(String... params) {
-            Log.d("LOG/HomeWeek", "start SightInfoManager doInBackground");
+            Log.d("LOG/HomeWeek", "SightInfoManager doInBackground()");
             StringBuilder jsonHtml = new StringBuilder();
             try{
                 // 연결 url 설정
@@ -182,7 +215,7 @@ public class WeekSightFragment extends Fragment {
 
         @Override
         protected void onPostExecute(String result) {
-            Log.d("LOG/HomeWeek", "start SightInfoManager onPostExecute");
+            Log.d("LOG/HomeWeek", "SightInfoManager onPostExecute()");
             // DB에 저장된 이미지의 경로를 따로 List에 저장시킴.
             // 이 List의 값을 바탕으로 Bitmap으로 변환시킴.
             try {
@@ -248,7 +281,7 @@ public class WeekSightFragment extends Fragment {
     private class BitmapConverter extends AsyncTask<Object, Object, Object> {
         @Override
         protected Object doInBackground(Object... params) {
-            Log.d("LOG/HomeWeek", "start BitmapConverter doInBackground");
+            Log.d("LOG/HomeWeek", "BitmapConverter is started");
             // 이미지의 경로가 저장되어 있는 list.
             List<String> list = (List<String>) params[0];
             Bitmap bitmap;
@@ -257,8 +290,14 @@ public class WeekSightFragment extends Fragment {
                 try {
                     // 만약 프래그먼트의 종료 등으로 인해 변환 작업을 중지시켜야 할 경우.
                     if(isCancelled()) {
-                        Log.d("LOG/HomeWeek", "break BitmapConverter doInBackground");
+                        Log.d("LOG/HomeWeek", "BitmapConverter is stopped");
                         return null;
+                    }
+                    if(isPausedConverting) {
+                        Log.d("LOG/HomeWeek", "BitmapConverter is waiting");
+                        synchronized (mConverter) {
+                            mConverter.wait();
+                        }
                     }
                     newurl = new URL(list.get(i));
                     bitmap = BitmapFactory.decodeStream(newurl.openConnection().getInputStream());
@@ -269,13 +308,15 @@ public class WeekSightFragment extends Fragment {
                     e.printStackTrace();
                 } catch (IOException e) {
                     e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
             return null;
         }
         @Override
         protected void onProgressUpdate(Object... values) {
-            Log.d("LOG/HomeWeek", "start BitmapConverter onProgressUpdate");
+            Log.d("LOG/HomeWeek", "BitmapConverter onProgressUpdate()");
             // 변환된 Bitmap.
             Bitmap bitmap = (Bitmap) values[0];
             // item의 index.
