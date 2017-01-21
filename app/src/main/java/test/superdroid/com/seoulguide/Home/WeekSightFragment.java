@@ -168,7 +168,7 @@ public class WeekSightFragment extends Fragment {
             String query = "?start_number=" + String.valueOf(startNumber) + "&data_count=" + String.valueOf(dataCount);
 
             // 서버에서 사용할 PHP 파일의 이름.
-            String phpName = "/new/Sight1000GetData.php";
+            String phpName = "/new/GetSight1000DataForHomeWeek.php";
 
             mSightInfoManager = new SightInfoManager();
             // DB로부터 데이터를 받아옴.
@@ -265,7 +265,7 @@ public class WeekSightFragment extends Fragment {
                         mConverter = new BitmapConverter();
                     }
                     // 인수로 이미지의 경로가 저장되어 있는 List를 넘김.
-                    mConverter.execute(mUrlList);
+                    mConverter.executeOnExecutor(THREAD_POOL_EXECUTOR, mUrlList);
                 } else {
                     Log.d("LOG/HomeWeek", "BitmapConverter is cancelled");
                 }
