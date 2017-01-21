@@ -57,9 +57,9 @@ public class MonthSightFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 1위부터 10개의 데이터를 가져오게 변수 초기화.
+        // 1위부터 5개의 데이터를 가져오게 변수 초기화.
         startNumber = 0;
-        dataCount = 10;
+        dataCount = 5;
 
         mSightInfoList = new ArrayList<>();
         mUrlList = new ArrayList<>();
@@ -86,8 +86,8 @@ public class MonthSightFragment extends Fragment {
                     RecyclerView.LayoutManager manager = recyclerView.getLayoutManager();
                     // 현재 화면에서 보이는 아이템의 가장 마지막 position을 가져옴.
                     int lastPosition = ((LinearLayoutManager) manager).findLastVisibleItemPosition();
-                    // 그 position이 최하단의 아이템일 경우
-                    if(lastPosition == (mSightInfoList.size()-1) && startNumber+dataCount == mSightInfoList.size()) {
+                    // 그 position이 최하단에 근접했을 경우.
+                    if((lastPosition+2) >= (mSightInfoList.size()-1) && startNumber+dataCount == mSightInfoList.size()) {
                         // 최대 30위까지만 보여주도록 제한.
                         if(startNumber+dataCount < SharedData.MAX_HOME_DATA_COUNT) {
                             Log.d("LOG/HomeMonth", "startNumber : " + startNumber);
