@@ -1,16 +1,164 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#ffffff">
 
     <android.support.v4.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Detaiaaaaaaaaaaaaaaaaaaaaaaaaaaaㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaal"
-            android:textSize="50sp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="130dp">
+                <ImageView
+                    android:id="@+id/detailMainImageImageView"
+                    android:layout_width="110dp"
+                    android:layout_height="100dp"
+                    android:src="@drawable/test"
+                    android:scaleType="fitXY"
+                    android:layout_margin="10dp"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true"/>
+
+                <TextView
+                    android:id="@+id/detailSightNameTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="30sp"
+                    android:text="창덕궁"
+                    android:layout_toRightOf="@id/detailMainImageImageView"
+                    android:layout_toEndOf="@id/detailMainImageImageView"
+                    android:layout_marginTop="5dp"/>
+
+                <TextView
+                    android:id="@+id/detailTagTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="동서울 고요한\n구경거리많은"
+                    android:layout_below="@id/detailSightNameTextView"
+                    android:layout_alignLeft="@id/detailSightNameTextView"
+                    android:layout_alignStart="@id/detailSightNameTextView"
+                    android:layout_marginTop="10dp"/>
+
+                <TextView
+                    android:id="@+id/detailSightRatingTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginRight="5dp"
+                    android:layout_marginEnd="5dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_alignTop="@id/detailSightNameTextView"
+                    android:textSize="21sp"
+                    android:text="4.8" />
+
+                <ImageView
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:src="@drawable/star"
+                    android:scaleType="fitXY"
+                    android:layout_toLeftOf="@id/detailSightRatingTextView"
+                    android:layout_toStartOf="@id/detailSightRatingTextView"
+                    android:layout_alignTop="@id/detailSightNameTextView"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginRight="7dp"
+                    android:layout_marginEnd="7dp"/>
+
+                <TextView
+                    android:id="@+id/detailSightLikeCountTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1823"
+                    android:textSize="21sp"
+                    android:layout_below="@id/detailSightRatingTextView"
+                    android:layout_alignRight="@id/detailSightRatingTextView"
+                    android:layout_alignEnd="@id/detailSightRatingTextView"
+                    android:layout_marginTop="7dp"/>
+
+                <ImageView
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:src="@drawable/like"
+                    android:scaleType="fitXY"
+                    android:layout_toLeftOf="@id/detailSightLikeCountTextView"
+                    android:layout_toStartOf="@id/detailSightLikeCountTextView"
+                    android:layout_alignBottom="@id/detailSightLikeCountTextView"
+                    android:layout_marginRight="7dp"
+                    android:layout_marginEnd="7dp"/>
+
+                <ImageButton
+                    android:id="@+id/detailPlannerImageButton"
+                    android:layout_width="40dp"
+                    android:layout_height="25dp"
+                    android:background="@drawable/planner"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginRight="10dp"
+                    android:layout_marginEnd="10dp"
+                    android:layout_marginBottom="15dp"/>
+
+                <ImageButton
+                    android:id="@+id/detailBucketImageButton"
+                    android:layout_width="40dp"
+                    android:layout_height="25dp"
+                    android:background="@drawable/bucket"
+                    android:layout_toLeftOf="@id/detailPlannerImageButton"
+                    android:layout_toStartOf="@id/detailPlannerImageButton"
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginRight="15dp"
+                    android:layout_marginEnd="15dp"
+                    android:layout_marginBottom="15dp"/>
+
+            </RelativeLayout>
+
+            <TextView
+                android:id="@+id/detailSightInfoTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=" 창덕궁은 서울시 종로구에 위치한 조선 시대의 궁궐이다. 건축과 조경이 잘 조화된 종합 환경디자인 사례이면서 동시에 한국적인 공간 분위기를 읽게 하는 중요한 문화유산이다. 건축사에 있어 조선 시대 궁궐의 한 전형을 보여 주며, 후원의 조경은 우리나라의 대표적인 왕실 정원으로서 가치가 높다."
+                android:textSize="18sp"
+                android:padding="12dp" />
+
+            <LinearLayout
+                android:id="@+id/detailSubImageLayout"
+                android:layout_width="match_parent"
+                android:layout_height="310dp"
+                android:orientation="vertical"
+                android:background="#000000">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="280dp"
+                    android:layout_margin="15dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/test"/>
+            </LinearLayout>
+
+            <!--맵뷰-->
+            <FrameLayout
+                android:id="@+id/detailMapLayout"
+                android:layout_width="match_parent"
+                android:layout_height="250dp">
+            </FrameLayout>
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/detailReviewRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layoutManager="LinearLayoutManager"/>
+
+        </LinearLayout>
+
     </android.support.v4.widget.NestedScrollView>
 
 </LinearLayout>
