@@ -128,9 +128,9 @@ public class MonthSightFragment extends Fragment {
     }
 
     @Override
-    public void onDestroyView() {
-        Log.d("LOG/HomeMonth", "onDestroyView()");
-        super.onDestroyView();
+    public void onPause() {
+        Log.d("LOG/HomeMonth", "onPause()");
+        super.onPause();
 
         // 만약 이미지 변환 작업 중이라면 변환 작업을 일시중지 시킨다.
         if(mConverter.getStatus() == AsyncTask.Status.RUNNING) {
