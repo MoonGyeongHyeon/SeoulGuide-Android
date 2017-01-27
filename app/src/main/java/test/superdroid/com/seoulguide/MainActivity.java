@@ -147,8 +147,11 @@ public class MainActivity extends AppCompatActivity
                 break;
         }
 
-        if(fragment != null && tag != null)
+        if(fragment != null && tag != null) {
+            for(int i=0; i<fragmentManager.getBackStackEntryCount(); ++i)
+                fragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
             fragmentManager.beginTransaction().replace(R.id.fragmentComponentLayout, fragment, tag).commit();
+        }
 
         mDrawerLayout.closeDrawers();
         return true;

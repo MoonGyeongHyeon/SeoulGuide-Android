@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    
+    <ImageView
+        android:id="@+id/detailSubImageImageView"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:padding="10dp"
+        android:visibility="gone"
+        android:scaleType="fitXY"/>
+
+    <ProgressBar
+        android:id="@+id/detailSubImageLoadingProgressBar"
+        android:layout_width="match_parent"
+        android:layout_height="310dp"
+        android:scaleX="0.4"
+        android:scaleY="0.4"/>
+
+</LinearLayout>
