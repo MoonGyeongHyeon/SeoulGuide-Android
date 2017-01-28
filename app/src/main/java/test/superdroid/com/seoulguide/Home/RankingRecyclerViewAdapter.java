@@ -61,6 +61,8 @@ public class RankingRecyclerViewAdapter extends RecyclerView.Adapter<RankingRecy
                 Bundle bundle = new Bundle();
                 // Bundle에 상세정보를 볼 여행지의 아이디를 설정.
                 bundle.putInt("sightId", sightInfo.getId());
+                // 툴바 타이틀에 여행지 이름을 출력시킬 수 있도록 하기 위해 여행지의 이름을 전달.
+                bundle.putString("sightName", sightInfo.getName());
                 sightDetailFragment.setArguments(bundle);
 
                 mFragment.getActivity().getSupportFragmentManager()

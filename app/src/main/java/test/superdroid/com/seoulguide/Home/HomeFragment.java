@@ -5,6 +5,7 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
+import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,5 +26,13 @@ public class HomeFragment extends Fragment {
         tabLayout.setupWithViewPager(viewPager);
 
         return layout;
+    }
+
+    // 뒤로가기 등으로 다시 홈에 돌아왔을 때 툴바 타이틀을 복구시킨다.
+    @Override
+    public void onResume() {
+        super.onResume();
+        Toolbar toolbar = (Toolbar) getActivity().findViewById(R.id.mainToolbar);
+        toolbar.setTitle("홈");
     }
 }
