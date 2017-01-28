@@ -29,6 +29,7 @@ public class MainActivity extends AppCompatActivity
 
     private DrawerLayout mDrawerLayout;
     private MenuItem mSearchMenuItem;
+    private Toolbar mToolbar;
     private String menuHome = "Menu Home";
     private String menuTag = "Menu Tag";
     private String menuPrefer = "Menu Prefer";
@@ -41,19 +42,20 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.a_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.mainToolbar);
-        setSupportActionBar(toolbar);
+        mToolbar = (Toolbar) findViewById(R.id.mainToolbar);
+        setSupportActionBar(mToolbar);
 
         mDrawerLayout = (DrawerLayout) findViewById(R.id.mainDrawerLayout);
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.mainNavigationView);
         navigationView.setNavigationItemSelectedListener(this);
 
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, mDrawerLayout, toolbar, R.string.drawerOpen, R.string.drawerClose);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, mDrawerLayout, mToolbar, R.string.drawerOpen, R.string.drawerClose);
         mDrawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
         getSupportFragmentManager().beginTransaction().add(R.id.fragmentComponentLayout, new HomeFragment(), menuHome).commit();
+        mToolbar.setTitle(getResources().getString(R.string.menuHome));
     }
 
     @Override
@@ -97,6 +99,7 @@ public class MainActivity extends AppCompatActivity
         FragmentManager fragmentManager = getSupportFragmentManager();
         Fragment fragment = null;
         String tag = null;
+        String title = null;
 
         switch(item.getItemId()) {
             case R.id.menuHome :
@@ -104,6 +107,7 @@ public class MainActivity extends AppCompatActivity
                     Log.d("LOG/MainActivity", "Fragment Home is selected");
                     fragment = new HomeFragment();
                     tag = menuHome;
+                    title = getResources().getString(R.string.menuHome);
                 }
                 break;
             case R.id.menuTag :
@@ -111,6 +115,7 @@ public class MainActivity extends AppCompatActivity
                     Log.d("LOG/MainActivity", "Fragment Tag is selected");
                     fragment = new TagFragment();
                     tag = menuTag;
+                    title = getResources().getString(R.string.menuTag);
                 }
                 break;
             case R.id.menuPrefer :
@@ -118,6 +123,7 @@ public class MainActivity extends AppCompatActivity
                     Log.d("LOG/MainActivity", "Fragment Prefer is selected");
                     fragment = new PreferFragment();
                     tag = menuPrefer;
+                    title = getResources().getString(R.string.menuPrefer);
                 }
                 break;
             case R.id.menuBucket :
@@ -125,6 +131,7 @@ public class MainActivity extends AppCompatActivity
                     Log.d("LOG/MainActivity", "Fragment Prefer is selected");
                     fragment = new BucketFragment();
                     tag = menuBucket;
+                    title = getResources().getString(R.string.menuBucket);
                 }
                 break;
             case R.id.menuPlanner :
@@ -132,6 +139,7 @@ public class MainActivity extends AppCompatActivity
                     Log.d("LOG/MainActivity", "Fragment Prefer is selected");
                     fragment = new PlannerFragment();
                     tag = menuPlanner;
+                    title = getResources().getString(R.string.menuPlanner);
                 }
                 break;
             case R.id.menuMap :
@@ -139,6 +147,7 @@ public class MainActivity extends AppCompatActivity
                     Log.d("LOG/MainActivity", "Fragment Prefer is selected");
                     fragment = new MapFragment();
                     tag = menuMap;
+                    title = getResources().getString(R.string.menuMap);
                 }
                 break;
             default :
@@ -151,6 +160,7 @@ public class MainActivity extends AppCompatActivity
             for(int i=0; i<fragmentManager.getBackStackEntryCount(); ++i)
                 fragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
             fragmentManager.beginTransaction().replace(R.id.fragmentComponentLayout, fragment, tag).commit();
+            mToolbar.setTitle(title);
         }
 
         mDrawerLayout.closeDrawers();

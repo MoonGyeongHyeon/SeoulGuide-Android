@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -72,7 +73,9 @@ public class SightDetailFragment extends Fragment {
         if(bundle != null) {
             int id = bundle.getInt("sightId");
             mDetailInfo.setId(id);
-            Log.d("LOG/Detail", "Sight id : " + id);
+            String name = bundle.getString("sightName");
+            mDetailInfo.setName(name);
+            Log.d("LOG/Detail", "Sight id : " + id + ", name : " + name);
         }
 
         loadData();
@@ -84,6 +87,10 @@ public class SightDetailFragment extends Fragment {
 
         mSubImageLayout = (LinearLayout) layout.findViewById(R.id.detailSubImageLayout);
         mMainImageView = (ImageView) layout.findViewById(R.id.detailMainImageImageView);
+
+        String title = "상세정보 : " + mDetailInfo.getName();
+        Toolbar toolbar = (Toolbar) getActivity().findViewById(R.id.mainToolbar);
+        toolbar.setTitle(title);
 
         return layout;
     }
@@ -221,14 +228,15 @@ public class SightDetailFragment extends Fragment {
                 JSONObject root = new JSONObject(result);
                 JSONArray ja = root.getJSONArray("result");
                 // result로 넘어오는 배열은 아래와 같다.
-                // index 0 : 여행지 이름, 내용, 좋아요 수, 위치 등의 정보.
+                // index 0 : 여행지 내용, 좋아요 수, 위치 등의 정보.
                 // index 1 : 여행지에 해당하는 태그 이름들.
                 // index 2 : 여행지의 이미지가 위치한 경로들.
                 for(int i=0; i<ja.length(); i++) {
                     // index 0.
                     if(i==0) {
+                        // 여행지 이름의 경우 홈 프래그먼트에서 Bundle을 통해 받아왔기 때문에
+                        // 따로 설정해주지 않는다.
                         JSONObject jo = ja.getJSONObject(i);
-                        mDetailInfo.setName(jo.getString("sight_name"));
                         mDetailInfo.setInfo(jo.getString("sight_info"));
                         mDetailInfo.setLikeCount(jo.getInt("sight_recommend_count"));
                         mDetailInfo.setLocationX(jo.getDouble("sight_location_x"));
@@ -256,7 +264,7 @@ public class SightDetailFragment extends Fragment {
                             tag += obj.getString("tag_name");
 
                             if(j%2 == 0)
-                                tag += " ";
+                                tag += ", ";
                             else
                                 tag += "\n";
                         }
