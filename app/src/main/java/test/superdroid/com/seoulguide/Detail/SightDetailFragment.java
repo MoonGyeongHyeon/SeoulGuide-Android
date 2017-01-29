@@ -161,20 +161,13 @@ public class SightDetailFragment extends Fragment {
     }
 
     private void registerProgressBar(int size) {
-        // DP 단위를 쓰기 위해 dimen 설정 후 불러오기.
-        float height = getResources().getDimension(R.dimen.detailViewPager);
-
         // SubImageLayout에 추가할 ViewPager를 생성.
-        ViewPager viewPager = new ViewPager(getContext());
-        viewPager.setId(R.id.detailSubImageViewPager);
-        viewPager.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int)height));
+        ViewPager viewPager = (ViewPager) mSubImageLayout.findViewById(R.id.detailSubImageViewPager);
 
         // ViewPager에 부착할 Adapter 생성.
         // 생성자로 Context와 이미지의 개수를 받는다.
         adapter = new SubImageViewPagerAdapter(getContext(), size);
         viewPager.setAdapter(adapter);
-        // Layout에 ViewPager 추가.
-        mSubImageLayout.addView(viewPager);
     }
 
     private class DetailInfoManager extends AsyncTask<String, Void, String> {
