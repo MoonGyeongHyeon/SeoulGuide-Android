@@ -10,13 +10,20 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+
+import net.daum.mf.map.api.MapPOIItem;
+import net.daum.mf.map.api.MapPoint;
+import net.daum.mf.map.api.MapView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -44,8 +51,6 @@ public class SightDetailFragment extends Fragment {
     private DetailInfo mDetailInfo;
     // 여행지의 여러 이미지들 경로를 가지고 있음. Bitmap으로의 변환 과정에 쓰인다.
     private List<String> mUrlList;
-    // 여행지의 상세 정보를 가지고 오는 객체.
-    private DetailInfoManager mDetailInfoManager;
     // 여행지의 이미지 경로를 Bitmap으로 변환하는 객체.
     private BitmapConverter mBitmapConverter;
     // 여행지의 이미지들을 보여줄 레이아웃 객체.
@@ -53,11 +58,15 @@ public class SightDetailFragment extends Fragment {
     // 최상단의 메인 이미지를 저장할 객체.
     private ImageView mMainImageView;
     // Sub Image를 담당하는 ViewPager에 부착할 Adapter
-    private SubImageViewPagerAdapter adapter;
+    private SubImageViewPagerAdapter mAdapter;
     // 이미지 변환 중인 상태에서 홈 등으로 화면이 전환될 경우 변환 작업을 일시중지시킨다.
     // 다시 상세보기로 돌아올 때 일시중지된 변환 작업을 다시 재개시킨다.
     // 이를 위해 싱크를 맞춰줄 변수.
     private boolean isPausedConverting = false;
+    // 다음 지도 API를 위한 key.
+    private final String mMapKey = "17fd056513f09a6ebe80bdb559e2285d";
+    // 맵 뷰를 담을 레이아웃.
+    private FrameLayout mMapLayout;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -68,7 +77,7 @@ public class SightDetailFragment extends Fragment {
 
         mBitmapConverter = new BitmapConverter();
 
-        // 홈 등에서 넘어온 여행지 id를 받아온다.
+        // 홈 프래그먼트 등에서 넘어온 여행지 id와 name을 받아온다.
         Bundle bundle = getArguments();
         if(bundle != null) {
             int id = bundle.getInt("sightId");
@@ -91,6 +100,8 @@ public class SightDetailFragment extends Fragment {
         String title = "상세정보 : " + mDetailInfo.getName();
         Toolbar toolbar = (Toolbar) getActivity().findViewById(R.id.mainToolbar);
         toolbar.setTitle(title);
+
+        mMapLayout = (FrameLayout) layout.findViewById(R.id.detailMapLayout);
 
         return layout;
     }
@@ -137,13 +148,56 @@ public class SightDetailFragment extends Fragment {
 
     private void loadData() {
         if(Network.isNetworkConnected(getContext())) {
-            mDetailInfoManager = new DetailInfoManager();
+            // 여행지의 상세 정보를 가지고 오는 객체.
+            DetailInfoManager detailInfoManager = new DetailInfoManager();
 
             String phpName = "/new/GetSight1000DataForDetail.php";
-            mDetailInfoManager.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, SharedData.SERVER_IP + phpName, String.valueOf(mDetailInfo.getId()));
+            detailInfoManager.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, SharedData.SERVER_IP + phpName, String.valueOf(mDetailInfo.getId()));
         } else {
             Toast.makeText(getActivity(), "인터넷 연결을 확인해주세요.", Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void initMapView() {
+        Log.d("LOG/Detail", "initMap");
+        // 맵 뷰 생성.
+        MapView mapView = new MapView(getActivity());
+        // API KEY 적용
+        mapView.setDaumMapApiKey(mMapKey);
+        // 맵뷰 레이아웃에 추가.
+        mMapLayout.addView(mapView);
+        // 맵 뷰의 중심점을 이동시키고 줌인/줌아웃을 가능하게 한다.
+        mapView.setMapCenterPointAndZoomLevel(MapPoint.mapPointWithGeoCoord(mDetailInfo.getLocationX(), mDetailInfo.getLocationY()), 1, true);
+        mapView.zoomIn(true);
+        mapView.zoomOut(true);
+
+        // 위치를 파악하기 쉽게 하기 위해 마커를 추가한다.
+        MapPOIItem marker = new MapPOIItem();
+        marker.setItemName("Sight Marker");
+        marker.setTag(0);
+        marker.setMapPoint(MapPoint.mapPointWithGeoCoord(mDetailInfo.getLocationX(), mDetailInfo.getLocationY()));
+        marker.setMarkerType(MapPOIItem.MarkerType.BluePin);
+        marker.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);
+        mapView.addPOIItem(marker);
+
+        // ScrollView 안에 MapView가 있으므로 스크롤 뷰가 중첩된다.
+        // MapView가 정상적으로 스크롤될 수 있도록 MapView에 Touch Event를 추가해준다.
+        mapView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        // 상위 뷰인 NestedScrollView(Parent)가 Motion Event를 처리하지 못하도록 설정.
+                        v.getParent().requestDisallowInterceptTouchEvent(true);
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        // 다시 원래대로 돌려놓음.
+                        v.getParent().requestDisallowInterceptTouchEvent(false);
+                        break;
+                }
+                return false;
+            }
+        });
     }
 
     // 여행지 이름, 좋아요 수, 상세내용 등의 TextView를 초기화.
@@ -166,8 +220,8 @@ public class SightDetailFragment extends Fragment {
 
         // ViewPager에 부착할 Adapter 생성.
         // 생성자로 Context와 이미지의 개수를 받는다.
-        adapter = new SubImageViewPagerAdapter(getContext(), size);
-        viewPager.setAdapter(adapter);
+        mAdapter = new SubImageViewPagerAdapter(getContext(), size);
+        viewPager.setAdapter(mAdapter);
     }
 
     private class DetailInfoManager extends AsyncTask<String, Void, String> {
@@ -246,6 +300,7 @@ public class SightDetailFragment extends Fragment {
                             String avgStr = String.format(Locale.getDefault() ,"%.1f", sumPoint / peopleCount);
                             mDetailInfo.setRating(Double.valueOf(avgStr));
                         }
+                        initMapView();
                         Log.d("LOG/Detail", "Sight name : " + mDetailInfo.getName());
                     }
                     // index 1.
@@ -256,7 +311,9 @@ public class SightDetailFragment extends Fragment {
                             JSONObject obj = tagArray.getJSONObject(j);
                             tag += obj.getString("tag_name");
 
-                            if(j%2 == 0)
+                            if(j==tagArray.length()-1)
+                                break;
+                            else if(j%2 == 0)
                                 tag += ", ";
                             else
                                 tag += "\n";
@@ -348,7 +405,7 @@ public class SightDetailFragment extends Fragment {
             // MainImage가 SubImage의 0번 index가 된다.
             Log.d("LOG/Detail", "Converting SubImage " + index + " is completed ");
             // ProgressBar를 변환된 Bitmap으로 치환.
-            adapter.registerSubImage(bitmap, index);
+            mAdapter.registerSubImage(bitmap, index);
         }
     }
 }
