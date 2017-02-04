@@ -18,6 +18,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -68,6 +69,8 @@ public class SightDetailFragment extends Fragment {
     private FrameLayout mMapLayout;
     // 리뷰를 출력할 뷰.
     private RecyclerView mReviewRecyclerView;
+    // 리뷰 출력을 위한 Adapter;
+    private ReviewRecyclerViewAdapter mReviewAdapter;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -103,17 +106,18 @@ public class SightDetailFragment extends Fragment {
 
         mMapLayout = (FrameLayout) layout.findViewById(R.id.detailMapLayout);
         mReviewRecyclerView = (RecyclerView) layout.findViewById(R.id.detailReviewRecyclerView);
+        mReviewRecyclerView.setNestedScrollingEnabled(false);
 
-        LinearLayout detailCreateReviewLayout = (LinearLayout) layout.findViewById(R.id.detailCreateReviewLayout);
-        detailCreateReviewLayout.setOnClickListener(new View.OnClickListener() {
+        RatingBar createReviewRatingBar = (RatingBar) layout.findViewById(R.id.reviewCreateRatingBar);
+        // RatingBar의 값을 바꿨을 때(터치했을 때) Dialog가 보여지도록.
+        createReviewRatingBar.setOnRatingBarChangeListener(new RatingBar.OnRatingBarChangeListener() {
             @Override
-            public void onClick(View v) {
-                ReviewDialog dialog = new ReviewDialog(v.getContext());
+            public void onRatingChanged(RatingBar ratingBar, float rating, boolean fromUser) {
+                ReviewDialog dialog = new ReviewDialog(getContext(), mDetailInfo.getId(), mReviewAdapter);
 
                 dialog.show();
             }
         });
-
         return layout;
     }
     @Override
@@ -159,20 +163,12 @@ public class SightDetailFragment extends Fragment {
 
     private void loadData() {
         if(Network.isNetworkConnected(getContext())) {
-            // 리뷰를 제외한 여행지의 상세 정보를 가지고 오는 객체.
-            // 리뷰를 제외한 이유는 처음 홈에서 상세정보 프래그먼트로 넘어올 때 리뷰를 호출하며
-            // 사용자가 리뷰를 작성할 때 또다시 리뷰 정보를 불러오기 위해
-            // 다른 정보들과 별개로 재호출할 수 있는 구조를 갖기 위함이다.
+            // 여행지의 상세 정보 등을 가지고 오는 객체.
             DetailInfoManager detailInfoManager = new DetailInfoManager();
 
-            String infoPhpName = "/new/GetDetailDataWithoutReview.php";
+            String infoPhpName = "/new/GetDetailData.php";
             detailInfoManager.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, SharedData.SERVER_IP + infoPhpName, String.valueOf(mDetailInfo.getId()));
 
-            // 리뷰를 가져오는 객체.
-            DetailReviewManager detailReviewManager = new DetailReviewManager();
-
-            String reviewPhpName = "/new/GetDetailReviewData.php";
-            detailReviewManager.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, SharedData.SERVER_IP + reviewPhpName, String.valueOf(mDetailInfo.getId()));
         } else {
             Toast.makeText(getActivity(), "인터넷 연결을 확인해주세요.", Toast.LENGTH_LONG).show();
         }
@@ -234,8 +230,8 @@ public class SightDetailFragment extends Fragment {
     }
 
     private void initReview(List<Review> reviewList) {
-        ReviewRecyclerViewAdapter adapter = new ReviewRecyclerViewAdapter(R.layout.i_detail_review, reviewList);
-        mReviewRecyclerView.setAdapter(adapter);
+        mReviewAdapter = new ReviewRecyclerViewAdapter(R.layout.i_detail_review, reviewList);
+        mReviewRecyclerView.setAdapter(mReviewAdapter);
     }
 
     private void registerProgressBar(int size) {
@@ -302,6 +298,7 @@ public class SightDetailFragment extends Fragment {
                 // index 0 : 여행지 내용, 좋아요 수, 위치 등의 정보.
                 // index 1 : 여행지에 해당하는 태그 이름들.
                 // index 2 : 여행지의 이미지가 위치한 경로들.
+                // index 3 : 여행지의 리뷰 정보들.
                 for(int i=0; i<ja.length(); i++) {
                     // index 0.
                     if(i==0) {
@@ -365,79 +362,25 @@ public class SightDetailFragment extends Fragment {
                         mBitmapConverter = new BitmapConverter();
                         mBitmapConverter.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, urlList);
                     }
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-    private class DetailReviewManager extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... params) {
-            Log.d("LOG/Detail", "DetailReviewManager doInBackground()");
-            StringBuilder jsonHtml = new StringBuilder();
-            try{
-                String link = params[0];
-                String sId = params[1];
-                String data = URLEncoder.encode("SIGHT_ID", "UTF-8") + "=" + URLEncoder.encode(sId, "UTF-8");
-                // 연결 url 설정
-                URL url = new URL(link);
-                // 커넥션 객체 생성
-                HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+                    // index 3.
+                    else if(i == 3) {
+                        JSONArray reviewArray = ja.getJSONArray(i);
+                        // 리뷰 정보들을 받아온다.
+                        List<Review> reviewList = new ArrayList<>();
+                        for(int j=0; j<reviewArray.length(); j++) {
+                            JSONObject obj = reviewArray.getJSONObject(j);
+                            String writer = obj.getString("review_writer");
+                            String info = obj.getString("review_info");
+                            String date = obj.getString("review_date");
+                            String point = obj.getString("review_point");
 
-                // 연결되었으면.
-                if(conn != null){
-                    // POST 방식을 위한 데이터 셋
-                    conn.setDoOutput(true);
-                    conn.setConnectTimeout(10000);
-                    conn.setUseCaches(false);
-
-                    OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream());
-                    wr.write(data);
-                    wr.flush();
-                    // 연결되었음 코드가 리턴되면.
-                    if(conn.getResponseCode() == HttpURLConnection.HTTP_OK){
-                        BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
-                        for(;;){
-                            // 웹상에 보여지는 텍스트를 라인단위로 읽어 저장.
-                            String line = br.readLine();
-                            if(line == null) break;
-                            // 저장된 텍스트 라인을 jsonHtml에 붙여넣음
-                            jsonHtml.append(line + "\n");
+                            Review review = new Review(writer, info, date, point);
+                            reviewList.add(review);
                         }
-                        br.close();
+                        Log.d("LOG/Detail", "Review data is loaded");
+                        initReview(reviewList);
                     }
-                    conn.disconnect();
                 }
-            } catch(Exception ex){
-                ex.printStackTrace();
-            }
-            return jsonHtml.toString();
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            try {
-                Log.d("LOG/Detail", "DetailReviewManager onPostExecute()");
-                JSONObject root = new JSONObject(result);
-                JSONArray ja = root.getJSONArray("result");
-                // 리뷰 정보들을 받아온다.
-                List<Review> reviewList = new ArrayList<>();
-                for(int i=0; i<ja.length(); i++) {
-                    JSONObject obj = ja.getJSONObject(i);
-                    String writer = obj.getString("review_writer");
-                    String info = obj.getString("review_info");
-                    String date = obj.getString("review_date");
-                    String point = obj.getString("review_point");
-
-                    Review review = new Review(writer, info, date, point);
-                    reviewList.add(review);
-                }
-                Log.d("LOG/Detail", "Review data is loaded");
-                initReview(reviewList);
-
             } catch (JSONException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -445,6 +388,7 @@ public class SightDetailFragment extends Fragment {
             }
         }
     }
+
     private class BitmapConverter extends AsyncTask<Object, Object, Object> {
         @Override
         protected Object doInBackground(Object... params) {

@@ -58,4 +58,8 @@ public class ReviewRecyclerViewAdapter extends RecyclerView.Adapter<ReviewRecycl
             mDateTextView = (TextView) itemView.findViewById(R.id.detailReviewDateTextView);
         }
     }
+
+    public void addItem(Review review) {
+        mReviewList.add(0, review);
+    }
 }

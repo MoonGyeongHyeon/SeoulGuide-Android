@@ -10,9 +10,12 @@
         android:src="@drawable/review"/>
 
     <RatingBar
+        android:id="@+id/reviewRatingBar"
         android:layout_width="wrap_content"
         android:layout_height="70dp"
-        android:layout_gravity="center"/>
+        android:layout_gravity="center"
+        android:numStars="5"
+        android:stepSize="0.5"/>
 
     <EditText
         android:id="@+id/reviewWriterEditText"
@@ -31,6 +34,7 @@
         android:lines="4"/>
     
     <Button
+        android:id="@+id/reviewCreateButton"
         android:layout_width="wrap_content"
         android:layout_height="45dp"
         android:layout_gravity="center"
