@@ -168,7 +168,7 @@ public class MonthSightFragment extends Fragment {
             String query = "?start_number=" + String.valueOf(startNumber) + "&data_count=" + String.valueOf(dataCount);
 
             // 서버에서 사용할 PHP 파일의 이름.
-            String phpName = "/new/GetSight1000DataForHomeMonth.php";
+            String phpName = "/new/GetHomeMonthData.php";
 
             mSightInfoManager = new SightInfoManager();
             // DB로부터 데이터를 받아옴.
