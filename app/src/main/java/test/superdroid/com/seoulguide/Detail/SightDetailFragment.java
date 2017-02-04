@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -49,8 +50,6 @@ public class SightDetailFragment extends Fragment {
 
     // 여행지의 상세정보를 가지고 있음.
     private DetailInfo mDetailInfo;
-    // 여행지의 여러 이미지들 경로를 가지고 있음. Bitmap으로의 변환 과정에 쓰인다.
-    private List<String> mUrlList;
     // 여행지의 이미지 경로를 Bitmap으로 변환하는 객체.
     private BitmapConverter mBitmapConverter;
     // 여행지의 이미지들을 보여줄 레이아웃 객체.
@@ -67,13 +66,14 @@ public class SightDetailFragment extends Fragment {
     private final String mMapKey = "17fd056513f09a6ebe80bdb559e2285d";
     // 맵 뷰를 담을 레이아웃.
     private FrameLayout mMapLayout;
+    // 리뷰를 출력할 뷰.
+    private RecyclerView mReviewRecyclerView;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         mDetailInfo = new DetailInfo();
-        mUrlList = new ArrayList<>();
 
         mBitmapConverter = new BitmapConverter();
 
@@ -102,6 +102,17 @@ public class SightDetailFragment extends Fragment {
         toolbar.setTitle(title);
 
         mMapLayout = (FrameLayout) layout.findViewById(R.id.detailMapLayout);
+        mReviewRecyclerView = (RecyclerView) layout.findViewById(R.id.detailReviewRecyclerView);
+
+        LinearLayout detailCreateReviewLayout = (LinearLayout) layout.findViewById(R.id.detailCreateReviewLayout);
+        detailCreateReviewLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ReviewDialog dialog = new ReviewDialog(v.getContext());
+
+                dialog.show();
+            }
+        });
 
         return layout;
     }
@@ -148,18 +159,26 @@ public class SightDetailFragment extends Fragment {
 
     private void loadData() {
         if(Network.isNetworkConnected(getContext())) {
-            // 여행지의 상세 정보를 가지고 오는 객체.
+            // 리뷰를 제외한 여행지의 상세 정보를 가지고 오는 객체.
+            // 리뷰를 제외한 이유는 처음 홈에서 상세정보 프래그먼트로 넘어올 때 리뷰를 호출하며
+            // 사용자가 리뷰를 작성할 때 또다시 리뷰 정보를 불러오기 위해
+            // 다른 정보들과 별개로 재호출할 수 있는 구조를 갖기 위함이다.
             DetailInfoManager detailInfoManager = new DetailInfoManager();
 
-            String phpName = "/new/GetSight1000DataForDetail.php";
-            detailInfoManager.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, SharedData.SERVER_IP + phpName, String.valueOf(mDetailInfo.getId()));
+            String infoPhpName = "/new/GetDetailDataWithoutReview.php";
+            detailInfoManager.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, SharedData.SERVER_IP + infoPhpName, String.valueOf(mDetailInfo.getId()));
+
+            // 리뷰를 가져오는 객체.
+            DetailReviewManager detailReviewManager = new DetailReviewManager();
+
+            String reviewPhpName = "/new/GetDetailReviewData.php";
+            detailReviewManager.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, SharedData.SERVER_IP + reviewPhpName, String.valueOf(mDetailInfo.getId()));
         } else {
             Toast.makeText(getActivity(), "인터넷 연결을 확인해주세요.", Toast.LENGTH_LONG).show();
         }
     }
 
     private void initMapView() {
-        Log.d("LOG/Detail", "initMap");
         // 맵 뷰 생성.
         MapView mapView = new MapView(getActivity());
         // API KEY 적용
@@ -212,6 +231,11 @@ public class SightDetailFragment extends Fragment {
         sightInfoTextView.setText(mDetailInfo.getInfo());
         TextView sightLikeCountTextView = (TextView) getActivity().findViewById(R.id.detailSightLikeCountTextView);
         sightLikeCountTextView.setText(String.valueOf(mDetailInfo.getLikeCount()));
+    }
+
+    private void initReview(List<Review> reviewList) {
+        ReviewRecyclerViewAdapter adapter = new ReviewRecyclerViewAdapter(R.layout.i_detail_review, reviewList);
+        mReviewRecyclerView.setAdapter(adapter);
     }
 
     private void registerProgressBar(int size) {
@@ -324,22 +348,96 @@ public class SightDetailFragment extends Fragment {
                     }
                     //index 2.
                     else if(i == 2) {
+                        // 여행지의 여러 이미지들 경로를 가지는 List 생성.
+                        List<String> urlList = new ArrayList<>();
                         JSONArray urlArray = ja.getJSONArray(i);
                         for(int j=0; j<urlArray.length(); j++) {
                             JSONObject obj = urlArray.getJSONObject(j);
                             String path = obj.getString("sight_image_filepath");
                             String name = obj.getString("sight_image_filename");
-                            mUrlList.add(SharedData.SERVER_IP + path + name);
+                            urlList.add(SharedData.SERVER_IP + path + name);
                         }
 
                         // 이미지를 Bitmap으로 변환하는 동안 보여줄 ProgressBar를 설정.
-                        registerProgressBar(mUrlList.size());
+                        registerProgressBar(urlList.size());
 
                         // 이미지 변환작업 시작.
                         mBitmapConverter = new BitmapConverter();
-                        mBitmapConverter.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, mUrlList);
+                        mBitmapConverter.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, urlList);
                     }
                 }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    private class DetailReviewManager extends AsyncTask<String, Void, String> {
+        @Override
+        protected String doInBackground(String... params) {
+            Log.d("LOG/Detail", "DetailReviewManager doInBackground()");
+            StringBuilder jsonHtml = new StringBuilder();
+            try{
+                String link = params[0];
+                String sId = params[1];
+                String data = URLEncoder.encode("SIGHT_ID", "UTF-8") + "=" + URLEncoder.encode(sId, "UTF-8");
+                // 연결 url 설정
+                URL url = new URL(link);
+                // 커넥션 객체 생성
+                HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+
+                // 연결되었으면.
+                if(conn != null){
+                    // POST 방식을 위한 데이터 셋
+                    conn.setDoOutput(true);
+                    conn.setConnectTimeout(10000);
+                    conn.setUseCaches(false);
+
+                    OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream());
+                    wr.write(data);
+                    wr.flush();
+                    // 연결되었음 코드가 리턴되면.
+                    if(conn.getResponseCode() == HttpURLConnection.HTTP_OK){
+                        BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
+                        for(;;){
+                            // 웹상에 보여지는 텍스트를 라인단위로 읽어 저장.
+                            String line = br.readLine();
+                            if(line == null) break;
+                            // 저장된 텍스트 라인을 jsonHtml에 붙여넣음
+                            jsonHtml.append(line + "\n");
+                        }
+                        br.close();
+                    }
+                    conn.disconnect();
+                }
+            } catch(Exception ex){
+                ex.printStackTrace();
+            }
+            return jsonHtml.toString();
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            try {
+                Log.d("LOG/Detail", "DetailReviewManager onPostExecute()");
+                JSONObject root = new JSONObject(result);
+                JSONArray ja = root.getJSONArray("result");
+                // 리뷰 정보들을 받아온다.
+                List<Review> reviewList = new ArrayList<>();
+                for(int i=0; i<ja.length(); i++) {
+                    JSONObject obj = ja.getJSONObject(i);
+                    String writer = obj.getString("review_writer");
+                    String info = obj.getString("review_info");
+                    String date = obj.getString("review_date");
+                    String point = obj.getString("review_point");
+
+                    Review review = new Review(writer, info, date, point);
+                    reviewList.add(review);
+                }
+                Log.d("LOG/Detail", "Review data is loaded");
+                initReview(reviewList);
+
             } catch (JSONException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -355,7 +453,7 @@ public class SightDetailFragment extends Fragment {
             List<String> list = (List<String>) params[0];
             Bitmap bitmap;
             URL newurl;
-            for(int i=0; i<mUrlList.size(); i++) {
+            for(int i=0; i<list.size(); i++) {
                 try {
                     // 만약 프래그먼트의 종료 등으로 인해 변환 작업을 중지시켜야 할 경우.
                     if(isCancelled()) {

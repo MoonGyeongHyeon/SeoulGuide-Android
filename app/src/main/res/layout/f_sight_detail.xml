@@ -151,6 +151,26 @@
                 android:padding="35dp">
             </FrameLayout>
 
+            <LinearLayout
+                android:id="@+id/detailCreateReviewLayout"
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:text="@string/detail_create_review"
+                    android:gravity="bottom|center_horizontal"
+                    android:textSize="20sp"/>
+                
+                <RatingBar
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center"/>
+
+            </LinearLayout>
+
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/detailReviewRecyclerView"
                 android:layout_width="match_parent"

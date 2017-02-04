@@ -10,5 +10,9 @@
     <string name="drawerOpen">Drawer Open</string>
     <string name="drawerClose">Drawer Close</string>
     <string name="searchView">검색</string>
+    <string name="detail_review_writer_hint">작성자</string>
+    <string name="detail_review_info_hint">내용</string>
+    <string name="detail_create_review">리뷰 남기기</string>
+    <string name="detail_review_ok">확인</string>
 
 </resources>

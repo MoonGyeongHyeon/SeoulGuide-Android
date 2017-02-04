@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="10dp">
+
+    <TextView
+        android:id="@+id/detailReviewWriterTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="23sp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <RatingBar
+        android:id="@+id/detailReviewRatingBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:numStars="5"
+        android:stepSize="0.5"
+        android:rating="3.0"
+        android:layout_below="@id/detailReviewWriterTextView"
+        style="?android:attr/ratingBarStyleIndicator"/>
+    <TextView
+        android:id="@+id/detailReviewPointTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:layout_toRightOf="@id/detailReviewRatingBar"
+        android:layout_toEndOf="@id/detailReviewRatingBar"
+        android:layout_alignTop="@id/detailReviewRatingBar"
+        android:layout_marginLeft="5dp"
+        android:layout_marginStart="5dp"/>
+
+    <TextView
+        android:id="@+id/detailReviewDateTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignTop="@id/detailReviewRatingBar"/>
+
+    <TextView
+        android:id="@+id/detailReviewInfoTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:layout_below="@id/detailReviewRatingBar" />
+
+</RelativeLayout>
