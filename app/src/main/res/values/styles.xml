@@ -13,11 +13,4 @@
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style
-        name="ReviewRatingBar"
-        parent="@android:style/Widget.RatingBar">
-        <item
-            name="android:progressDrawable">@drawable/review_rating_bar</item>
-    </style>
-
 </resources>

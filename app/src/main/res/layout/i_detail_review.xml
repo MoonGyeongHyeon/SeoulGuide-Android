@@ -15,17 +15,15 @@
     <RatingBar
         android:id="@+id/detailReviewRatingBar"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="20dp"
         android:numStars="5"
         android:stepSize="0.5"
-        android:rating="3.0"
         android:layout_below="@id/detailReviewWriterTextView"
-        style="?android:attr/ratingBarStyleIndicator"/>
+        style="?attr/ratingBarStyleSmall"/>
     <TextView
         android:id="@+id/detailReviewPointTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="20sp"
         android:layout_toRightOf="@id/detailReviewRatingBar"
         android:layout_toEndOf="@id/detailReviewRatingBar"
         android:layout_alignTop="@id/detailReviewRatingBar"
@@ -38,7 +36,8 @@
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
-        android:layout_alignTop="@id/detailReviewRatingBar"/>
+        android:layout_alignTop="@id/detailReviewRatingBar"
+        android:layout_marginBottom="2dp"/>
 
     <TextView
         android:id="@+id/detailReviewInfoTextView"
