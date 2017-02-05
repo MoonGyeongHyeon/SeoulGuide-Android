@@ -147,7 +147,18 @@ public class SightDetailFragment extends Fragment {
             isPausedConverting = true;
             Log.d("LOG/Detail", "isPausedConverting : " + !isPausedConverting + " -> " + isPausedConverting);
         }
+
     }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        Log.d("LOG/Detail", "onDestroyView()");
+        // 맵 뷰는 앱 내에 반드시 하나만 존재해야 하므로 이 프래그먼트가 사라질 때 맵 뷰도 사라지도록 설정.
+        if(mMapLayout != null)
+            mMapLayout.removeAllViews();
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
