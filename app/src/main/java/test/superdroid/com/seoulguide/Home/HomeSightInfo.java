@@ -2,7 +2,7 @@ package test.superdroid.com.seoulguide.Home;
 
 import android.graphics.Bitmap;
 
-public class SightInfo {
+public class HomeSightInfo {
     int id;
     int rank;
     Bitmap picture;

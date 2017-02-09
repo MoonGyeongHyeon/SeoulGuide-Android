@@ -34,8 +34,8 @@ import test.superdroid.com.seoulguide.Util.SharedData;
 
 public class WeekSightFragment extends Fragment {
 
-    // RecyclerView로부터 출력시킬 SightInfo List.
-    private List<SightInfo> mSightInfoList;
+    // RecyclerView로부터 출력시킬 HomeSightInfo List.
+    private List<HomeSightInfo> mSightInfoList;
     // 이미지의 경로를 가지고 있는 urlList. Bitmap으로 변환하는 과정에서 쓰인다.
     private List<String> mUrlList;
     // DB로부터 데이터를 받아오는 데 받아올 시작 순위. 예를 들어 값이 0일 경우 1위부터 가져오며, 5일 경우 6위부터 가져옴.
@@ -73,7 +73,7 @@ public class WeekSightFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View layout = inflater.inflate(R.layout.f_week_sight, container, false);
 
-        mAdapter = new RankingRecyclerViewAdapter(mSightInfoList, R.layout.i_home_ranking, this);
+        mAdapter = new RankingRecyclerViewAdapter(mSightInfoList, R.layout.i_sight_info, this);
         RecyclerView recyclerView = (RecyclerView) layout.findViewById(R.id.weekRankingRecyclerView);
         recyclerView.setAdapter(mAdapter);
 
@@ -89,7 +89,7 @@ public class WeekSightFragment extends Fragment {
                     // 그 position이 최하단에 근접했을 경우.
                     if((lastPosition+2) >= (mSightInfoList.size()-1) && startNumber+dataCount == mSightInfoList.size()) {
                         // 최대 30위까지만 보여주도록 제한.
-                        if(startNumber+dataCount < SharedData.MAX_HOME_DATA_COUNT) {
+                        if(startNumber+dataCount < SharedData.MAX_DATA_COUNT) {
                             Log.d("LOG/HomeWeek", "startNumber : " + startNumber);
                             // 가져올 데이터의 시작 번호를 변경.
                             startNumber = mSightInfoList.size();
@@ -231,26 +231,26 @@ public class WeekSightFragment extends Fragment {
                     double sumPoint = jo.getDouble("sum_point");
                     int peopleCount = jo.getInt("p_count");
 
-                    // mSightInfoList에 추가하기 위해 SightInfo 객체 생성 및 필드 설정.
-                    SightInfo sightInfo = new SightInfo();
-                    sightInfo.setId(id);
-                    sightInfo.setName(name);
+                    // mSightInfoList에 추가하기 위해 HomeSightInfo 객체 생성 및 필드 설정.
+                    HomeSightInfo homeSightInfo = new HomeSightInfo();
+                    homeSightInfo.setId(id);
+                    homeSightInfo.setName(name);
                     // 데이터가 추가 로드될 때 순위를 표시하기 위해 startNumber를 더해줌.
-                    sightInfo.setRank(i + startNumber + 1);
-                    sightInfo.setLikeCount(recommendCount);
+                    homeSightInfo.setRank(i + startNumber + 1);
+                    homeSightInfo.setLikeCount(recommendCount);
                     // 별점을 구하는 데 만약 총점이 0이거나 평가자가 없을 경우 0.0으로 설정.
                     if (sumPoint == 0 || peopleCount == 0)
-                        sightInfo.setRating(0.0);
+                        homeSightInfo.setRating(0.0);
                     else {
                         // 순환소수가 나올 수 있으므로 둘째 자리에서 반올림.
                         String avgStr = String.format(Locale.getDefault() ,"%.1f", sumPoint / peopleCount);
-                        sightInfo.setRating(Double.valueOf(avgStr));
+                        homeSightInfo.setRating(Double.valueOf(avgStr));
                     }
 
-                    mSightInfoList.add(sightInfo);
+                    mSightInfoList.add(homeSightInfo);
 
                     mUrlList.add(SharedData.SERVER_IP + thumbnail);
-                    Log.d("LOG/HomeWeek", "get SightInfo : " + sightInfo.getName() + ", Ranking : " + sightInfo.getRank());
+                    Log.d("LOG/HomeWeek", "get HomeSightInfo : " + homeSightInfo.getName() + ", Ranking : " + homeSightInfo.getRank());
                 }
                 // 이미지를 제외한 여행지의 정보를 업데이트함.
                 mAdapter.notifyDataSetChanged();
@@ -323,13 +323,13 @@ public class WeekSightFragment extends Fragment {
             int index = (Integer) values[1];
 
             // index에 해당하는 mSightInfoList 원소를 가져옴.
-            SightInfo sightInfo = mSightInfoList.get(index);
+            HomeSightInfo homeSightInfo = mSightInfoList.get(index);
             // 가져온 원소에 bitmap을 설정함.
-            sightInfo.setPicture(bitmap);
+            homeSightInfo.setPicture(bitmap);
 
             // 화면에 이미지 출력을 위해 업데이트.
             mAdapter.notifyItemChanged(index);
-            Log.d("LOG/HomeWeek", "get Bitmap : " + sightInfo.getName()  + ", Ranking : " + sightInfo.getRank());
+            Log.d("LOG/HomeWeek", "get Bitmap : " + homeSightInfo.getName()  + ", Ranking : " + homeSightInfo.getRank());
         }
     }
 }
