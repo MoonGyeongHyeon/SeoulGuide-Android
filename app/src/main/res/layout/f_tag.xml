@@ -1,11 +1,335 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!--태그 레이아웃이 확장모드이든 축소모드이든 항상 보여질 부분-->
+    <!--카테고리 3개와 확장/축소 태그 1개가 존재한다.-->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:weightSum="100"
+        android:orientation="horizontal">
+        <CheckBox
+            android:id="@+id/tagCategoryAllCheckBox"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="20"
+            android:background="@drawable/tag_category"
+            android:text="전체"
+            android:gravity="center"/>
+        <CheckBox
+            android:id="@+id/tagCategoryCheckBox1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="20"
+            android:background="@drawable/tag_category"
+            android:text="유적"
+            android:gravity="center"/>
+        <CheckBox
+            android:id="@+id/tagCategoryCheckBox2"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="20"
+            android:background="@drawable/tag_category"
+            android:text="명소"
+            android:gravity="center"/>
+        <CheckBox
+            android:id="@+id/tagCategoryCheckBox3"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="20"
+            android:background="@drawable/tag_category"
+            android:text="도심"
+            android:gravity="center"/>
+        <CheckBox
+            android:id="@+id/tagMoreCheckBox"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="20"
+            android:background="@drawable/tag_more_ellipsis"
+            android:gravity="center"/>
+
+    </LinearLayout>
+
+    <!--선택된 태그로부터 여행지를 보여줄 뷰-->
+    <!--항상 축소모드일 때 보여진다.-->
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/tagSightRecyclerView"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Tag"/>
+        app:layoutManager="LinearLayoutManager"/>
+
+    <!--확장모드일 경우 보여지는 레이아웃-->
+    <LinearLayout
+        android:id="@+id/tagMoreLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <!--나머지 카테고리 태그의 항목을 보여준다.-->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:weightSum="100"
+            android:orientation="horizontal">
+            <CheckBox
+                android:id="@+id/tagCategoryCheckBox4"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="20"
+                android:background="@drawable/tag_category"
+                android:text="시장"
+                android:gravity="center"/>
+            <CheckBox
+                android:id="@+id/tagCategoryCheckBox5"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="20"
+                android:background="@drawable/tag_category"
+                android:text="산"
+                android:gravity="center"/>
+            <CheckBox
+                android:id="@+id/tagCategoryCheckBox6"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="20"
+                android:background="@drawable/tag_category"
+                android:text="유원지"
+                android:gravity="center"/>
+            <CheckBox
+                android:id="@+id/tagCategoryCheckBox7"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="20"
+                android:background="@drawable/tag_category"
+                android:text="휴양림"
+                android:gravity="center"/>
+            <CheckBox
+                android:id="@+id/tagCategoryCheckBox8"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="20"
+                android:background="@drawable/tag_category"
+                android:text="박물관"
+                android:gravity="center"/>
+        </LinearLayout>
+        <android.support.v4.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+            <!-- 이 아래부터는 반복되는 구조를 갖는다.
+            서브 카테고리의 종류(TextView)와 항목(CheckBox)를 갖는다.-->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="5dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="지역별"
+                    android:background="@drawable/tag_sub_category"
+                    android:gravity="center"
+                    android:textSize="15sp"
+                    android:paddingBottom="4dp"/>
+
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="4"
+                    android:layout_marginBottom="15dp">
+                    <CheckBox
+                        android:id="@+id/tagLocationCheckBox1"
+                        android:layout_width="wrap_content"
+                        android:text="서서울"/>
+                    <CheckBox
+                        android:id="@+id/tagLocationCheckBox2"
+                        android:layout_width="wrap_content"
+                        android:text="동서울"/>
+                    <CheckBox
+                        android:id="@+id/tagLocationCheckBox3"
+                        android:layout_width="wrap_content"
+                        android:text="북서울"/>
+                    <CheckBox
+                        android:id="@+id/tagLocationCheckBox4"
+                        android:layout_width="wrap_content"
+                        android:text="남서울"/>
+                    <CheckBox
+                        android:id="@+id/tagLocationCheckBox5"
+                        android:layout_width="wrap_content"
+                        android:text="중심부"/>
+
+                </GridLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="분위기"
+                    android:background="@drawable/tag_sub_category"
+                    android:gravity="center"
+                    android:textSize="15sp"
+                    android:paddingBottom="4dp"/>
+
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="4"
+                    android:layout_marginBottom="15dp">
+                    <CheckBox
+                        android:id="@+id/tagAtmosphereCheckBox1"
+                        android:layout_width="wrap_content"
+                        android:text="떠들썩한"/>
+                    <CheckBox
+                        android:id="@+id/tagAtmosphereCheckBox2"
+                        android:layout_width="wrap_content"
+                        android:text="차분한"/>
+                    <CheckBox
+                        android:id="@+id/tagAtmosphereCheckBox3"
+                        android:layout_width="wrap_content"
+                        android:text="고요한"/>
+                    <CheckBox
+                        android:id="@+id/tagAtmosphereCheckBox4"
+                        android:layout_width="wrap_content"
+                        android:text="아름다운"/>
+
+                </GridLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="테마"
+                    android:background="@drawable/tag_sub_category"
+                    android:gravity="center"
+                    android:textSize="15sp"
+                    android:paddingBottom="4dp"/>
+
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="3"
+                    android:layout_marginBottom="15dp">
+                    <CheckBox
+                        android:id="@+id/tagThemeCheckBox1"
+                        android:layout_width="wrap_content"
+                        android:text="사진찍기 좋은"/>
+                    <CheckBox
+                        android:id="@+id/tagThemeCheckBox2"
+                        android:layout_width="wrap_content"
+                        android:text="먹거리가 많은"/>
+                    <CheckBox
+                        android:id="@+id/tagThemeCheckBox3"
+                        android:layout_width="wrap_content"
+                        android:text="구경하기 좋은"/>
+                    <CheckBox
+                        android:id="@+id/tagThemeCheckBox4"
+                        android:layout_width="wrap_content"
+                        android:text="나홀로"/>
+                    <CheckBox
+                        android:id="@+id/tagThemeCheckBox5"
+                        android:layout_width="wrap_content"
+                        android:text="힐링"/>
+
+                </GridLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="일행"
+                    android:background="@drawable/tag_sub_category"
+                    android:gravity="center"
+                    android:textSize="15sp"
+                    android:paddingBottom="4dp"/>
+
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="4"
+                    android:layout_marginBottom="15dp">
+                    <CheckBox
+                        android:id="@+id/tagGroupCheckBox1"
+                        android:layout_width="wrap_content"
+                        android:text="가족"/>
+                    <CheckBox
+                        android:id="@+id/tagGroupCheckBox2"
+                        android:layout_width="wrap_content"
+                        android:text="연인"/>
+                    <CheckBox
+                        android:id="@+id/tagGroupCheckBox3"
+                        android:layout_width="wrap_content"
+                        android:text="친구"/>
+                    <CheckBox
+                        android:id="@+id/tagGroupCheckBox4"
+                        android:layout_width="wrap_content"
+                        android:text="직장 동료"/>
+
+                </GridLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="연령별"
+                    android:background="@drawable/tag_sub_category"
+                    android:gravity="center"
+                    android:textSize="15sp"
+                    android:paddingBottom="4dp"/>
+
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="4"
+                    android:layout_marginBottom="15dp">
+                    <CheckBox
+                        android:id="@+id/tagAgeCheckBox1"
+                        android:layout_width="wrap_content"
+                        android:text="10대"/>
+                    <CheckBox
+                        android:id="@+id/tagAgeCheckBox2"
+                        android:layout_width="wrap_content"
+                        android:text="20대"/>
+                    <CheckBox
+                        android:id="@+id/tagAgeCheckBox3"
+                        android:layout_width="wrap_content"
+                        android:text="30대"/>
+                    <CheckBox
+                        android:id="@+id/tagAgeCheckBox4"
+                        android:layout_width="wrap_content"
+                        android:text="40대"/>
+                    <CheckBox
+                        android:id="@+id/tagAgeCheckBox5"
+                        android:layout_width="wrap_content"
+                        android:text="50대 이상"/>
+
+                </GridLayout>
+
+            </LinearLayout>
+
+        </android.support.v4.widget.NestedScrollView>
+
+        <!--선택된 태그들을 적용하기 위한 버튼과 체크박스를 초기화하기 위한 버튼-->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:orientation="horizontal"
+            android:weightSum="100">
+            <Button
+                android:id="@+id/tagOKButton"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="확인"
+                android:gravity="center"
+                android:layout_weight="50"/>
+            <Button
+                android:id="@+id/tagInitButton"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="초기화"
+                android:gravity="center"
+                android:layout_weight="50"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
 
 </LinearLayout>
