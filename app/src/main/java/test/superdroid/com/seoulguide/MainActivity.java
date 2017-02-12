@@ -23,6 +23,8 @@ import test.superdroid.com.seoulguide.Map.MapFragment;
 import test.superdroid.com.seoulguide.Planner.PlannerFragment;
 import test.superdroid.com.seoulguide.Prefer.PreferFragment;
 import test.superdroid.com.seoulguide.Tag.TagFragment;
+import test.superdroid.com.seoulguide.Util.OnBackPressedListener;
+
 /* develop*/
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, View.OnFocusChangeListener {
@@ -30,13 +32,13 @@ public class MainActivity extends AppCompatActivity
     private DrawerLayout mDrawerLayout;
     private MenuItem mSearchMenuItem;
     private Toolbar mToolbar;
-    private String menuHome = "Menu Home";
-    private String menuTag = "Menu Tag";
-    private String menuPrefer = "Menu Prefer";
-    private String menuBucket = "Menu Bucket";
-    private String menuPlanner = "Menu Planner";
-    private String menuMap = "Menu Map";
-
+    private final String mMenuHome = "홈";
+    private final String mMenuTag = "태그별 보기";
+    private final String mMenuPrefer = "사용자 성향";
+    private final String mMenuBucket = "버킷리스트";
+    private final String mMenuPlanner = "플래너";
+    private final String mMenuMap = "지도";
+    private OnBackPressedListener mOnBackPressedListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,8 +56,8 @@ public class MainActivity extends AppCompatActivity
         mDrawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
-        getSupportFragmentManager().beginTransaction().add(R.id.fragmentComponentLayout, new HomeFragment(), menuHome).commit();
-        mToolbar.setTitle(getResources().getString(R.string.menuHome));
+        getSupportFragmentManager().beginTransaction().add(R.id.fragmentComponentLayout, new HomeFragment(), mMenuHome).commit();
+        mToolbar.setTitle(mMenuHome);
     }
 
     @Override
@@ -86,10 +88,20 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onBackPressed() {
-        if(mDrawerLayout.isDrawerOpen(GravityCompat.START))
+        if(mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
             mDrawerLayout.closeDrawers();
-        else
+        }
+        else {
+            // 툴바의 타이틀 값을 통해 현재 보여지고 있는 프래그먼트가 무엇인지를 식별.
+            switch (mToolbar.getTitle().toString()) {
+                case mMenuTag:
+                    if(mOnBackPressedListener.doBack()) {
+                        return;
+                    }
+                    break;
+            }
             super.onBackPressed();
+        }
     }
 
     @Override
@@ -99,55 +111,49 @@ public class MainActivity extends AppCompatActivity
         FragmentManager fragmentManager = getSupportFragmentManager();
         Fragment fragment = null;
         String tag = null;
-        String title = null;
 
         switch(item.getItemId()) {
             case R.id.menuHome :
-                if(fragmentManager.findFragmentByTag(menuHome) == null) {
+                if(fragmentManager.findFragmentByTag(mMenuHome) == null) {
                     Log.d("LOG/MainActivity", "Fragment Home is selected");
                     fragment = new HomeFragment();
-                    tag = menuHome;
-                    title = getResources().getString(R.string.menuHome);
+                    tag = mMenuHome;
                 }
                 break;
             case R.id.menuTag :
-                if(fragmentManager.findFragmentByTag(menuTag) == null) {
+                if(fragmentManager.findFragmentByTag(mMenuTag) == null) {
                     Log.d("LOG/MainActivity", "Fragment Tag is selected");
                     fragment = new TagFragment();
-                    tag = menuTag;
-                    title = getResources().getString(R.string.menuTag);
+                    tag = mMenuTag;
+                    mOnBackPressedListener = (TagFragment) fragment;
                 }
                 break;
             case R.id.menuPrefer :
-                if(fragmentManager.findFragmentByTag(menuPrefer) == null) {
+                if(fragmentManager.findFragmentByTag(mMenuPrefer) == null) {
                     Log.d("LOG/MainActivity", "Fragment Prefer is selected");
                     fragment = new PreferFragment();
-                    tag = menuPrefer;
-                    title = getResources().getString(R.string.menuPrefer);
+                    tag = mMenuPrefer;
                 }
                 break;
             case R.id.menuBucket :
-                if(fragmentManager.findFragmentByTag(menuBucket) == null) {
+                if(fragmentManager.findFragmentByTag(mMenuBucket) == null) {
                     Log.d("LOG/MainActivity", "Fragment Prefer is selected");
                     fragment = new BucketFragment();
-                    tag = menuBucket;
-                    title = getResources().getString(R.string.menuBucket);
+                    tag = mMenuBucket;
                 }
                 break;
             case R.id.menuPlanner :
-                if(fragmentManager.findFragmentByTag(menuPlanner) == null) {
+                if(fragmentManager.findFragmentByTag(mMenuPlanner) == null) {
                     Log.d("LOG/MainActivity", "Fragment Prefer is selected");
                     fragment = new PlannerFragment();
-                    tag = menuPlanner;
-                    title = getResources().getString(R.string.menuPlanner);
+                    tag = mMenuPlanner;
                 }
                 break;
             case R.id.menuMap :
-                if(fragmentManager.findFragmentByTag(menuMap) == null) {
+                if(fragmentManager.findFragmentByTag(mMenuMap) == null) {
                     Log.d("LOG/MainActivity", "Fragment Prefer is selected");
                     fragment = new MapFragment();
-                    tag = menuMap;
-                    title = getResources().getString(R.string.menuMap);
+                    tag = mMenuMap;
                 }
                 break;
             default :
@@ -160,7 +166,7 @@ public class MainActivity extends AppCompatActivity
             for(int i=0; i<fragmentManager.getBackStackEntryCount(); ++i)
                 fragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
             fragmentManager.beginTransaction().replace(R.id.fragmentComponentLayout, fragment, tag).commit();
-            mToolbar.setTitle(title);
+            mToolbar.setTitle(tag);
         }
 
         mDrawerLayout.closeDrawers();

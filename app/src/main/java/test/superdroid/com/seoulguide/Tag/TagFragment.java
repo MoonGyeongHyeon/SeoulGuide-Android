@@ -35,17 +35,18 @@ import java.util.Locale;
 
 import test.superdroid.com.seoulguide.R;
 import test.superdroid.com.seoulguide.Util.Network;
+import test.superdroid.com.seoulguide.Util.OnBackPressedListener;
 import test.superdroid.com.seoulguide.Util.SharedData;
 
-public class TagFragment extends Fragment {
+public class TagFragment extends Fragment implements OnBackPressedListener {
     // RecyclerView로부터 출력시킬 TagSightInfo List.
     private List<TagSightInfo> mSightInfoList;
     // 이미지의 경로를 가지고 있는 urlList. Bitmap으로 변환하는 과정에서 쓰인다.
     private List<String> mUrlList;
     // DB로부터 데이터를 받아오는 데 받아올 시작 순위. 예를 들어 값이 0일 경우 1위부터 가져오며, 5일 경우 6위부터 가져옴.
-    private int startNumber;
+    private int mStartNumber;
     // DB로부터 가져올 데이터의 개수.
-    private int dataCount;
+    private int mDataCount;
     // RecyclerView에 설정할 Adapter 객체.
     private TagRecyclerViewAdapter mAdapter;
     // 서버에 존재하는 이미지의 주소를 Bitmap 객체로 바꿔줄 객체.
@@ -56,6 +57,7 @@ public class TagFragment extends Fragment {
     // 상세보기에서 다시 홈으로 돌아올 때 일시중지된 변환 작업을 다시 재개시킨다.
     // 이를 위해 싱크를 맞춰줄 변수.
     private boolean isPausedConverting = false;
+    private CheckBox mMoreCheckBox;
 
     private RecyclerView mSightRecyclerView;
     private LinearLayout mMoreLayout;
@@ -65,8 +67,8 @@ public class TagFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         // 1위부터 5개의 데이터를 가져오게 변수 초기화.
-        startNumber = 0;
-        dataCount = 5;
+        mStartNumber = 0;
+        mDataCount = 5;
 
         mSightInfoList = new ArrayList<>();
         mUrlList = new ArrayList<>();
@@ -99,14 +101,14 @@ public class TagFragment extends Fragment {
                     // 현재 화면에서 보이는 아이템의 가장 마지막 position을 가져옴.
                     int lastPosition = ((LinearLayoutManager) manager).findLastVisibleItemPosition();
                     // 그 position이 최하단에 근접했을 경우.
-                    if((lastPosition+2) >= (mSightInfoList.size()-1) && startNumber+dataCount == mSightInfoList.size()) {
+                    if((lastPosition+2) >= (mSightInfoList.size()-1) && mStartNumber+mDataCount == mSightInfoList.size()) {
                         // 최대 30위까지만 보여주도록 제한.
-                        if(startNumber+dataCount < SharedData.MAX_DATA_COUNT) {
-                            Log.d("LOG/Tag", "startNumber : " + startNumber);
+                        if(mStartNumber+mDataCount < SharedData.MAX_DATA_COUNT) {
+                            Log.d("LOG/Tag", "mStartNumber : " + mStartNumber);
                             // 가져올 데이터의 시작 번호를 변경.
-                            startNumber = mSightInfoList.size();
+                            mStartNumber = mSightInfoList.size();
                             // 가져올 데이터의 수를 5개로 지정.
-                            dataCount = 5;
+                            mDataCount = 5;
                             //데이터를 가져옴.
                             loadData();
                             Log.d("LOG/Tag", "Last Position : " + lastPosition);
@@ -174,13 +176,24 @@ public class TagFragment extends Fragment {
             }
     }
 
+    // 무언가를 처리했으면 true를, 아닐 경우 false를 반환.
+    @Override
+    public boolean doBack() {
+        Log.d("LOG/Tag", "Back key is pressed");
+        if(mMoreLayout.getVisibility() == View.VISIBLE) {
+            mMoreCheckBox.setChecked(false);
+            return true;
+        }
+        return false;
+    }
+
     private void loadData() {
         Log.d("LOG/Tag", "loadData()");
 
         // 인터넷 연결 확인.
         if(Network.isNetworkConnected(getContext())) {
             // 쿼리를 완성시킴.
-            String query = "?start_number=" + String.valueOf(startNumber) + "&data_count=" + String.valueOf(dataCount);
+            String query = "?start_number=" + String.valueOf(mStartNumber) + "&data_count=" + String.valueOf(mDataCount);
 
             // 서버에서 사용할 PHP 파일의 이름.
             String phpName = "/new/GetSightDataByTag.php";
@@ -206,9 +219,9 @@ public class TagFragment extends Fragment {
         checkBox = (CheckBox) layout.findViewById(R.id.tagCategoryCheckBox3);
         checkBox.setButtonDrawable(new StateListDrawable());
 
-        checkBox = (CheckBox) layout.findViewById(R.id.tagMoreCheckBox);
-        checkBox.setButtonDrawable(new StateListDrawable());
-        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        mMoreCheckBox = (CheckBox) layout.findViewById(R.id.tagMoreCheckBox);
+        mMoreCheckBox.setButtonDrawable(new StateListDrawable());
+        mMoreCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if(isChecked) {
@@ -294,8 +307,8 @@ public class TagFragment extends Fragment {
                     TagSightInfo tagSightInfo = new TagSightInfo();
                     tagSightInfo.setId(id);
                     tagSightInfo.setName(name);
-                    // 데이터가 추가 로드될 때 순위를 표시하기 위해 startNumber를 더해줌.
-                    tagSightInfo.setRank(i + startNumber + 1);
+                    // 데이터가 추가 로드될 때 순위를 표시하기 위해 mStartNumber를 더해줌.
+                    tagSightInfo.setRank(i + mStartNumber + 1);
                     tagSightInfo.setLikeCount(recommendCount);
                     // 별점을 구하는 데 만약 총점이 0이거나 평가자가 없을 경우 0.0으로 설정.
                     if (sumPoint == 0 || peopleCount == 0)
@@ -345,7 +358,7 @@ public class TagFragment extends Fragment {
             List<String> list = (List<String>) params[0];
             Bitmap bitmap;
             URL newurl;
-            for(int i=startNumber; i<mSightInfoList.size(); i++) {
+            for(int i=mStartNumber; i<mSightInfoList.size(); i++) {
                 try {
                     // 만약 프래그먼트의 종료 등으로 인해 변환 작업을 중지시켜야 할 경우.
                     if(isCancelled()) {
