@@ -14,9 +14,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -26,9 +28,11 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -58,9 +62,13 @@ public class TagFragment extends Fragment implements OnBackPressedListener {
     // 이를 위해 싱크를 맞춰줄 변수.
     private boolean isPausedConverting = false;
     private CheckBox mMoreCheckBox;
-
     private RecyclerView mSightRecyclerView;
+    private TextView mResultNothingTextView;
     private LinearLayout mMoreLayout;
+    private List<String> mMainCategoryTagList;
+    private List<String> mSubCategoryTagList;
+    private List<CheckBox> mMainCategoryCheckBoxList;
+    private List<CheckBox> mSubCategoryCheckBoxList;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -75,7 +83,12 @@ public class TagFragment extends Fragment implements OnBackPressedListener {
 
         mConverter = new BitmapConverter();
 
-        loadData();
+        mMainCategoryTagList = new ArrayList<>();
+        mSubCategoryTagList = new ArrayList<>();
+        mMainCategoryCheckBoxList = new ArrayList<>();
+        mSubCategoryCheckBoxList = new ArrayList<>();
+
+        loadData(true);
     }
 
     @Override
@@ -84,15 +97,15 @@ public class TagFragment extends Fragment implements OnBackPressedListener {
 
         mSightRecyclerView = (RecyclerView) layout.findViewById(R.id.tagSightRecyclerView);
         mMoreLayout = (LinearLayout) layout.findViewById(R.id.tagMoreLayout);
+        mResultNothingTextView = (TextView) layout.findViewById(R.id.tagResultNothingTextView);
 
         initCheckBox(layout);
 
         mAdapter = new TagRecyclerViewAdapter(mSightInfoList, R.layout.i_sight_info, this);
-        RecyclerView recyclerView = (RecyclerView) layout.findViewById(R.id.tagSightRecyclerView);
-        recyclerView.setAdapter(mAdapter);
+        mSightRecyclerView.setAdapter(mAdapter);
 
         //최하단 아이템에 도달했을 때, 추가로 여행지 데이터를 받아와 이어서 출력.
-        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+        mSightRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
                 // 스크롤을 드래그할 때 동작하도록.
@@ -107,10 +120,8 @@ public class TagFragment extends Fragment implements OnBackPressedListener {
                             Log.d("LOG/Tag", "mStartNumber : " + mStartNumber);
                             // 가져올 데이터의 시작 번호를 변경.
                             mStartNumber = mSightInfoList.size();
-                            // 가져올 데이터의 수를 5개로 지정.
-                            mDataCount = 5;
                             //데이터를 가져옴.
-                            loadData();
+                            loadData(mMainCategoryTagList.isEmpty() && mSubCategoryTagList.isEmpty());
                             Log.d("LOG/Tag", "Last Position : " + lastPosition);
                         }
                     }
@@ -119,7 +130,34 @@ public class TagFragment extends Fragment implements OnBackPressedListener {
         });
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
-        recyclerView.setLayoutManager(layoutManager);
+        mSightRecyclerView.setLayoutManager(layoutManager);
+
+        Button tagOKButton = (Button) layout.findViewById(R.id.tagOKButton);
+        tagOKButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                initField();
+
+                for(int i=0;i<mMainCategoryCheckBoxList.size(); i++) {
+                    CheckBox checkbox = mMainCategoryCheckBoxList.get(i);
+                    if(checkbox.isChecked()) {
+                        mMainCategoryTagList.add(checkbox.getText().toString());
+                        checkbox.setChecked(false);
+                        Log.d("LOG/Tag", "Main tag : " + checkbox.getText().toString());
+                    }
+                }
+                for(int i=0;i<mSubCategoryCheckBoxList.size(); i++) {
+                    CheckBox checkbox = mSubCategoryCheckBoxList.get(i);
+                    if(checkbox.isChecked()) {
+                        mSubCategoryTagList.add(checkbox.getText().toString());
+                        checkbox.setChecked(false);
+                        Log.d("LOG/Tag", "Sub tag : " + checkbox.getText().toString());
+                    }
+                }
+                mMoreCheckBox.setChecked(false);
+                loadData(mMainCategoryTagList.isEmpty() && mSubCategoryTagList.isEmpty());
+            }
+        });
 
         return layout;
     }
@@ -187,37 +225,84 @@ public class TagFragment extends Fragment implements OnBackPressedListener {
         return false;
     }
 
-    private void loadData() {
+    private void loadData(boolean isTagEmpty) {
         Log.d("LOG/Tag", "loadData()");
 
         // 인터넷 연결 확인.
         if(Network.isNetworkConnected(getContext())) {
-            // 쿼리를 완성시킴.
-            String query = "?start_number=" + String.valueOf(mStartNumber) + "&data_count=" + String.valueOf(mDataCount);
-
             // 서버에서 사용할 PHP 파일의 이름.
-            String phpName = "/new/GetSightDataByTag.php";
+            String phpName;
+            String mainQuery = null;
+            String subQuery = null;
+            if(isTagEmpty || mMainCategoryTagList.contains("전체"))
+                phpName = "/new/GetSightData.php";
+            else {
+                phpName = "/new/GetSightDataByTag.php";
+
+                if(!mMainCategoryTagList.isEmpty()) {
+                    mainQuery = mMainCategoryTagList.get(0);
+                    for (int i = 1; i < mMainCategoryTagList.size(); i++) {
+                        mainQuery += "," + mMainCategoryTagList.get(i);
+                    }
+                }
+
+                if(!mSubCategoryTagList.isEmpty()) {
+                    subQuery = mSubCategoryTagList.get(0);
+                    for (int i = 1; i < mSubCategoryTagList.size(); i++) {
+                        subQuery += "," + mSubCategoryTagList.get(i);
+                    }
+                }
+            }
+
+            Log.d("LOG/Tag", phpName);
 
             mSightInfoManager = new SightInfoManager();
             // DB로부터 데이터를 받아옴.
-            mSightInfoManager.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,SharedData.SERVER_IP + phpName + query);
+            mSightInfoManager.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,SharedData.SERVER_IP + phpName,
+                    String.valueOf(mStartNumber),
+                    String.valueOf(mDataCount),
+                    mainQuery,
+                    subQuery
+            );
         } else {
             Toast.makeText(getActivity(), "인터넷 연결을 확인해주세요.", Toast.LENGTH_LONG).show();
         }
     }
 
     private void initCheckBox(View layout) {
+        // 메인 카테고리
+        //**************************************************************
+        // 처음부터 보여지는 메인 카테고리를 터치할 경우 나머지 태그 선택부분 레이아웃이 자동으로 확장되도록.
+        CompoundButton.OnCheckedChangeListener listener = new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(!mMoreCheckBox.isChecked()) {
+                    mMoreCheckBox.setChecked(true);
+                    mMoreLayout.setVisibility(View.VISIBLE);
+                    mSightRecyclerView.setVisibility(View.GONE);
+                    mResultNothingTextView.setVisibility(View.GONE);
+                }
+            }
+        };
         CheckBox checkBox = (CheckBox) layout.findViewById(R.id.tagCategoryAllCheckBox);
         checkBox.setButtonDrawable(new StateListDrawable());
+        checkBox.setOnCheckedChangeListener(listener);
+        mMainCategoryCheckBoxList.add(checkBox);
 
         checkBox = (CheckBox) layout.findViewById(R.id.tagCategoryCheckBox1);
         checkBox.setButtonDrawable(new StateListDrawable());
+        checkBox.setOnCheckedChangeListener(listener);
+        mMainCategoryCheckBoxList.add(checkBox);
 
         checkBox = (CheckBox) layout.findViewById(R.id.tagCategoryCheckBox2);
         checkBox.setButtonDrawable(new StateListDrawable());
+        checkBox.setOnCheckedChangeListener(listener);
+        mMainCategoryCheckBoxList.add(checkBox);
 
         checkBox = (CheckBox) layout.findViewById(R.id.tagCategoryCheckBox3);
         checkBox.setButtonDrawable(new StateListDrawable());
+        checkBox.setOnCheckedChangeListener(listener);
+        mMainCategoryCheckBoxList.add(checkBox);
 
         mMoreCheckBox = (CheckBox) layout.findViewById(R.id.tagMoreCheckBox);
         mMoreCheckBox.setButtonDrawable(new StateListDrawable());
@@ -227,30 +312,120 @@ public class TagFragment extends Fragment implements OnBackPressedListener {
                 if(isChecked) {
                     mMoreLayout.setVisibility(View.VISIBLE);
                     mSightRecyclerView.setVisibility(View.GONE);
+                    mResultNothingTextView.setVisibility(View.GONE);
                 } else {
                     mMoreLayout.setVisibility(View.GONE);
-                    mSightRecyclerView.setVisibility(View.VISIBLE);
+                    if(mSightInfoList.isEmpty() && mSightInfoManager.getStatus() == AsyncTask.Status.FINISHED)
+                        mResultNothingTextView.setVisibility(View.VISIBLE);
+                    else
+                        mSightRecyclerView.setVisibility(View.VISIBLE);
                 }
             }
         });
 
         checkBox = (CheckBox) layout.findViewById(R.id.tagCategoryCheckBox4);
         checkBox.setButtonDrawable(new StateListDrawable());
+        mMainCategoryCheckBoxList.add(checkBox);
 
         checkBox = (CheckBox) layout.findViewById(R.id.tagCategoryCheckBox5);
         checkBox.setButtonDrawable(new StateListDrawable());
+        mMainCategoryCheckBoxList.add(checkBox);
 
         checkBox = (CheckBox) layout.findViewById(R.id.tagCategoryCheckBox6);
         checkBox.setButtonDrawable(new StateListDrawable());
+        mMainCategoryCheckBoxList.add(checkBox);
 
         checkBox = (CheckBox) layout.findViewById(R.id.tagCategoryCheckBox7);
         checkBox.setButtonDrawable(new StateListDrawable());
+        mMainCategoryCheckBoxList.add(checkBox);
 
         checkBox = (CheckBox) layout.findViewById(R.id.tagCategoryCheckBox8);
         checkBox.setButtonDrawable(new StateListDrawable());
+        mMainCategoryCheckBoxList.add(checkBox);
+        //**************************************************************
+
+        // 서브 카테고리
+        //**************************************************************
+        // 지역별
+        checkBox = (CheckBox) layout.findViewById(R.id.tagLocationCheckBox1);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagLocationCheckBox2);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagLocationCheckBox3);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagLocationCheckBox4);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagLocationCheckBox5);
+         mSubCategoryCheckBoxList.add(checkBox);
+
+        // 분위기
+        checkBox = (CheckBox) layout.findViewById(R.id.tagAtmosphereCheckBox1);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagAtmosphereCheckBox2);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagAtmosphereCheckBox3);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagAtmosphereCheckBox4);
+         mSubCategoryCheckBoxList.add(checkBox);
+
+        // 테마
+        checkBox = (CheckBox) layout.findViewById(R.id.tagThemeCheckBox1);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagThemeCheckBox2);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagThemeCheckBox3);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagThemeCheckBox4);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagThemeCheckBox5);
+         mSubCategoryCheckBoxList.add(checkBox);
+
+        // 일행
+        checkBox = (CheckBox) layout.findViewById(R.id.tagGroupCheckBox1);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagGroupCheckBox2);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagGroupCheckBox3);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagGroupCheckBox4);
+         mSubCategoryCheckBoxList.add(checkBox);
+
+        // 연령
+        checkBox = (CheckBox) layout.findViewById(R.id.tagAgeCheckBox1);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagAgeCheckBox2);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagAgeCheckBox3);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagAgeCheckBox4);
+         mSubCategoryCheckBoxList.add(checkBox);
+        checkBox = (CheckBox) layout.findViewById(R.id.tagAgeCheckBox5);
+         mSubCategoryCheckBoxList.add(checkBox);
+        //**************************************************************
     }
 
-    private class SightInfoManager extends AsyncTask<String, Integer,String> {
+    // 태그를 선택하고 확인 버튼을 눌렀을 때
+    // 기존에 가지고 있던 정보들을 모두 초기화.
+    public void initField() {
+        mStartNumber = 0;
+
+        mSightInfoList.clear();
+        mUrlList.clear();
+
+        mAdapter = new TagRecyclerViewAdapter(mSightInfoList, R.layout.i_sight_info, this);
+        mSightRecyclerView.setAdapter(mAdapter);
+
+        mSightInfoManager.cancel(false);
+        mSightInfoManager = new SightInfoManager();
+
+        mConverter.cancel(false);
+        mConverter = new BitmapConverter();
+
+        mMainCategoryTagList.clear();
+        mSubCategoryTagList.clear();
+    }
+
+    private class SightInfoManager extends AsyncTask<String, Integer, String> {
 
         @Override
         protected String doInBackground(String... params) {
@@ -259,12 +434,33 @@ public class TagFragment extends Fragment implements OnBackPressedListener {
             try{
                 // 연결 url 설정
                 URL url = new URL(params[0]);
+                String startNumber = params[1];
+                String dataCount = params[2];
+                String mainQuery = params[3];
+                String subQuery = params[4];
+                String data = URLEncoder.encode("start_number", "UTF-8") + "=" + URLEncoder.encode(startNumber, "UTF-8");
+                data += "&" + URLEncoder.encode("data_count", "UTF-8") + "=" + URLEncoder.encode(dataCount, "UTF-8");
+                if(mainQuery != null) {
+                    Log.d("LOG/Tag", "Query : " + mainQuery);
+                    data += "&" + URLEncoder.encode("main_query", "UTF-8") + "=" + URLEncoder.encode(mainQuery, "UTF-8");
+                }
+                if(subQuery != null) {
+                    Log.d("LOG/Tag", "Query : " + subQuery);
+                    data += "&" + URLEncoder.encode("sub_query", "UTF-8") + "=" + URLEncoder.encode(subQuery, "UTF-8");
+                }
+
                 // 커넥션 객체 생성
                 HttpURLConnection conn = (HttpURLConnection)url.openConnection();
                 // 연결되었으면.
                 if(conn != null){
+                    // POST 방식을 위한 데이터 셋
+                    conn.setDoOutput(true);
                     conn.setConnectTimeout(10000);
                     conn.setUseCaches(false);
+
+                    OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream());
+                    wr.write(data);
+                    wr.flush();
                     // 연결되었음 코드가 리턴되면.
                     if(conn.getResponseCode() == HttpURLConnection.HTTP_OK){
                         BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
@@ -295,6 +491,10 @@ public class TagFragment extends Fragment implements OnBackPressedListener {
                 JSONArray ja = root.getJSONArray("result");
                 // DB로부터 받아온 JSON 형식을 자바에서 사용할 수 있도록 변환.
                 for (int i = 0; i < ja.length(); i++) {
+                    if(isCancelled()) {
+                        mSightInfoList.clear();
+                        return;
+                    }
                     JSONObject jo = ja.getJSONObject(i);
                     int id = jo.getInt("sight_id");
                     String name = jo.getString("sight_name");
@@ -329,22 +529,35 @@ public class TagFragment extends Fragment implements OnBackPressedListener {
 
                 // 만약 SightInfoManager가 중단됐을 경우 Converter도 호출되지 않아야 함.
                 if(!isCancelled()) {
+                    // 여행지가 하나도 없을 경우 BitmapConverter를 호출할 필요가 없다.
                     Log.d("LOG/Tag", "BitmapConverter is called");
                     Log.d("LOG/Tag", "BitmapConverter status : " + mConverter.getStatus());
-                    if(mConverter.getStatus() == Status.FINISHED) {
+                    if (mConverter.getStatus() == Status.FINISHED) {
                         // 만약 BitmapConverter가 FINISHED 상태이면 재생성시킴.
                         Log.d("LOG/Tag", "BitmapConverter is finished and recreated");
                         mConverter = new BitmapConverter();
                     }
                     // 인수로 이미지의 경로가 저장되어 있는 List를 넘김.
                     mConverter.executeOnExecutor(THREAD_POOL_EXECUTOR, mUrlList);
+
+                    if(mSightInfoList.isEmpty()) {
+                        mResultNothingTextView.setVisibility(View.VISIBLE);
+                        mSightRecyclerView.setVisibility(View.GONE);
+                    }
+
                 } else {
                     Log.d("LOG/Tag", "BitmapConverter is cancelled");
                 }
 
             } catch (JSONException e) {
+                // 태그 결과가 없을 경우 예외가 발생한다.
                 e.printStackTrace();
+                Log.d("LOG/Tag", "Sight is nothing");
+                mResultNothingTextView.setVisibility(View.VISIBLE);
+                mSightRecyclerView.setVisibility(View.GONE);
+
             } catch (Exception e) {
+                Log.d("LOG/Tag", "B");
                 e.printStackTrace();
             }
         }
@@ -394,14 +607,16 @@ public class TagFragment extends Fragment implements OnBackPressedListener {
             // item의 index.
             int index = (Integer) values[1];
 
-            // index에 해당하는 mSightInfoList 원소를 가져옴.
-            TagSightInfo tagSightInfo = mSightInfoList.get(index);
-            // 가져온 원소에 bitmap을 설정함.
-            tagSightInfo.setPicture(bitmap);
+            if(!mSightInfoList.isEmpty()) {
+                // index에 해당하는 mSightInfoList 원소를 가져옴.
+                TagSightInfo tagSightInfo = mSightInfoList.get(index);
+                // 가져온 원소에 bitmap을 설정함.
+                tagSightInfo.setPicture(bitmap);
 
-            // 화면에 이미지 출력을 위해 업데이트.
-            mAdapter.notifyItemChanged(index);
-            Log.d("LOG/Tag", "get Bitmap : " + tagSightInfo.getName());
+                // 화면에 이미지 출력을 위해 업데이트.
+                mAdapter.notifyItemChanged(index);
+                Log.d("LOG/Tag", "get Bitmap : " + tagSightInfo.getName());
+            }
         }
     }
 }

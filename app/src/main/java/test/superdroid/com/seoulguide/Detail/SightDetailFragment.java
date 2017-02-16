@@ -71,6 +71,8 @@ public class SightDetailFragment extends Fragment {
     private RecyclerView mReviewRecyclerView;
     // 리뷰 출력을 위한 Adapter;
     private ReviewRecyclerViewAdapter mReviewAdapter;
+    // 메인 이미지 프로그레스 바
+    private ProgressBar mProgressBar;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -118,6 +120,8 @@ public class SightDetailFragment extends Fragment {
                 dialog.show();
             }
         });
+        mProgressBar = (ProgressBar) layout.findViewById(R.id.detailMainImageLoadingProgressBar);
+
         return layout;
     }
     @Override
@@ -447,8 +451,7 @@ public class SightDetailFragment extends Fragment {
             // MainImager를 설정하는 과정.
             if(index == 0) {
                 Log.d("LOG/Detail", "Converting MainImage is completed");
-                ProgressBar progressBar = (ProgressBar) getActivity().findViewById(R.id.detailMainImageLoadingProgressBar);
-                progressBar.setVisibility(View.GONE);
+                mProgressBar.setVisibility(View.GONE);
 
                 mMainImageView.setImageBitmap(bitmap);
                 mMainImageView.setVisibility(View.VISIBLE);
