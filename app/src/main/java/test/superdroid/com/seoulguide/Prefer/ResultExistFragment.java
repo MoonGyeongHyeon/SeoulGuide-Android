@@ -6,21 +6,14 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 
 import test.superdroid.com.seoulguide.R;
 
-public class PreferFragment extends Fragment {
-
+public class ResultExistFragment extends Fragment {
+    @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View layout = inflater.inflate(R.layout.f_prefer, container, false);
-
-        if(true) {
-            getFragmentManager().beginTransaction().
-                    replace(R.id.preferMainLayout, new NothingResultFragment()).commit();
-        }
-
+        View layout = inflater.inflate(R.layout.f_prefer_exist, container, false);
         return layout;
     }
 }
