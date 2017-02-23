@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/preferTestQuestionTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="1.어쩌구저쩌구 ~~~~~~~~~~~~~~~~~ㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁㅁ ㄴㄴㄴㄴㄴㄴㄴㄴㄴㄴㄴㄴㄴㄴㄴㄴㄴㄴㄴ"
+        android:layout_margin="5dp"
+        android:textSize="17sp"/>
+
+    <RadioGroup
+        android:id="@+id/preferRadioGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="40dp">
+        <RadioButton
+            android:id="@+id/preferVeryYesRadioButton"
+            android:text="매우 그렇다."
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+        <RadioButton
+            android:id="@+id/preferYesRadioButton"
+            android:text="약간 그렇다."
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        <RadioButton
+            android:id="@+id/preferSosoRadioButton"
+            android:text="보통"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        <RadioButton
+            android:id="@+id/preferNoRadioButton"
+            android:text="약간 아니다."
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        <RadioButton
+            android:id="@+id/preferVeryNoRadioButton"
+            android:text="매우 아니다."
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </RadioGroup>
+
+</LinearLayout>

@@ -15,5 +15,10 @@
     <string name="detail_create_review">리뷰 남기기</string>
     <string name="detail_review_ok">확인</string>
     <string name="tag_result_nothing">태그에 맞는 여행지가 없습니다.</string>
+    <string name="preferDataNothing">저장된 데이터가 없습니다.</string>
+    <string name="preferGoTest">내 성향 알아보기</string>
+    <string name="preferNextTest">다음 페이지</string>
+    <string name="preferRetest">다시하기</string>
+    <string name="preferGoToSightList">여행지 보러 가기</string>
 
 </resources>
