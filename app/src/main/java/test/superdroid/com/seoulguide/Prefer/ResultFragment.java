@@ -1,8 +1,12 @@
 package test.superdroid.com.seoulguide.Prefer;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,8 +23,8 @@ import java.io.InputStreamReader;
 import test.superdroid.com.seoulguide.R;
 
 public class ResultFragment extends Fragment {
-
     private String mFinalResultIndex;
+    private String[] mTagIds;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -30,6 +34,8 @@ public class ResultFragment extends Fragment {
         mFinalResultIndex = bundle.getString("finalResultIndex");
 
         Log.d("LOG/Prefer", mFinalResultIndex);
+
+        mTagIds = getTagIdsByIndex(mFinalResultIndex);
     }
 
     @Nullable
@@ -54,6 +60,22 @@ public class ResultFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 // 다시하기.
+                AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                builder.setMessage("테스트를 다시 진행하시겠습니까? 기존의 데이터는 삭제됩니다.")
+                        .setNegativeButton("예", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                getFragmentManager().beginTransaction().replace(R.id.preferMainLayout, new TestOneFragment()).addToBackStack(null).commit();
+                            }
+                        })
+                        .setPositiveButton("아니오", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                            }
+                        });
+                AlertDialog dialog = builder.create();
+                dialog.show();
             }
         });
         Button goToSightListButton = (Button)layout.findViewById(R.id.preferGoToSightListButton);
@@ -61,10 +83,25 @@ public class ResultFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 // 여행지 리스트 보기.
+                Fragment fragment = new SightListFragment();
+                Bundle bundle = new Bundle();
+                bundle.putStringArray("tagIds", mTagIds);
+                fragment.setArguments(bundle);
+
+                getFragmentManager().beginTransaction().replace(R.id.preferMainLayout, fragment).addToBackStack(null).commit();
             }
         });
 
         return layout;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        // 뒤로가기 등으로 다시 태그 프래그먼트에 돌아왔을 때 툴바 타이틀을 복구시킨다.
+        Toolbar toolbar = (Toolbar) getActivity().findViewById(R.id.mainToolbar);
+        toolbar.setTitle("사용자 성향");
     }
 
     private String[] getResultTextByIndex(String index) {
@@ -103,5 +140,20 @@ public class ResultFragment extends Fragment {
                 break;
         }
         return resId;
+    }
+
+    private String[] getTagIdsByIndex(String index) {
+        switch (index) {
+            case "ES":
+                return new String[] {"6", "10", "17"};
+            case "EN":
+                return new String[] {"9", "12", "15"};
+            case "IS":
+                return new String[] {"7", "11", "16"};
+            case "IN":
+                return new String[] {"8", "13", "14"};
+            default:
+                return null;
+        }
     }
 }

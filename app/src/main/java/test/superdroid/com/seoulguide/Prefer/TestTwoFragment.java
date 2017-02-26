@@ -62,8 +62,9 @@ public class TestTwoFragment extends Fragment {
                 fragment.setArguments(bundle);
 
                 FragmentManager fragmentManager = getFragmentManager();
-                // 설문 1페이지를 스택에서 제거.
-                fragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+                // 스택 비우기.
+                for(int i=0; i<fragmentManager.getBackStackEntryCount(); i++)
+                    fragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
 
                 fragmentManager.beginTransaction().replace(R.id.preferMainLayout, fragment).commit();
             }
