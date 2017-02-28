@@ -1,10 +1,10 @@
 package test.superdroid.com.seoulguide.Prefer;
 
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -25,6 +25,7 @@ import test.superdroid.com.seoulguide.R;
 public class ResultFragment extends Fragment {
     private String mFinalResultIndex;
     private String[] mTagIds;
+    private ResultDataInnerDB mInnerDB;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -33,9 +34,17 @@ public class ResultFragment extends Fragment {
         Bundle bundle = getArguments();
         mFinalResultIndex = bundle.getString("finalResultIndex");
 
-        Log.d("LOG/Prefer", mFinalResultIndex);
+        Log.d("LOG/Prefer", "Result Index : " + mFinalResultIndex);
 
         mTagIds = getTagIdsByIndex(mFinalResultIndex);
+
+        mInnerDB = ResultDataInnerDB.getIntance(getContext());
+
+        if(mInnerDB.isEmpty()) {
+            ContentValues values = new ContentValues();
+            values.put("_index", mFinalResultIndex);
+            mInnerDB.insert(values);
+        }
     }
 
     @Nullable
@@ -55,17 +64,18 @@ public class ResultFragment extends Fragment {
         TextView resultContentTextView = (TextView) layout.findViewById(R.id.preferResultContentTextView);
         resultContentTextView.setText(results[1]);
 
-        Button retestButton = (Button)layout.findViewById(R.id.preferRetestButton);
-        retestButton.setOnClickListener(new View.OnClickListener() {
+        Button deleteDataButton = (Button)layout.findViewById(R.id.preferDeleteDataButton);
+        deleteDataButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // 다시하기.
+                // 기록 지우기.
                 AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                builder.setMessage("테스트를 다시 진행하시겠습니까? 기존의 데이터는 삭제됩니다.")
+                builder.setMessage("기록을 삭제하시겠습니까? 지워진 기록은 되돌릴 수 없습니다.")
                         .setNegativeButton("예", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                getFragmentManager().beginTransaction().replace(R.id.preferMainLayout, new TestOneFragment()).addToBackStack(null).commit();
+                                mInnerDB.delete();
+                                getFragmentManager().beginTransaction().replace(R.id.preferMainLayout, new NothingResultFragment()).commit();
                             }
                         })
                         .setPositiveButton("아니오", new DialogInterface.OnClickListener() {
