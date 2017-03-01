@@ -1,9 +1,12 @@
 package test.superdroid.com.seoulguide.Detail;
 
+import android.Manifest;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
@@ -45,6 +48,7 @@ import java.util.Locale;
 
 import test.superdroid.com.seoulguide.R;
 import test.superdroid.com.seoulguide.Util.Network;
+import test.superdroid.com.seoulguide.Util.PermissionChecker;
 import test.superdroid.com.seoulguide.Util.SharedData;
 
 public class SightDetailFragment extends Fragment {
@@ -176,6 +180,24 @@ public class SightDetailFragment extends Fragment {
             }
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        // 내가 요청한 권한에 대한 응답인지 확인
+        if(requestCode == PermissionChecker.REQUEST_FINE_LOCATION) {
+            if(PermissionChecker.verifyPermission(grantResults)) {
+                // 동의.
+                Log.d("LOG/Detail", "Permission is granted");
+                initMapView();
+            } else {
+                // 거절.
+                Log.d("LOG/Detail", "Permission is denied");
+                Toast.makeText(getContext(), "위치 정보를 얻을 수 없어 지도를 이용할 수 없습니다.", Toast.LENGTH_LONG).show();
+            }
+        } else {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+
     private void loadData() {
         if(Network.isNetworkConnected(getContext())) {
             // 여행지의 상세 정보 등을 가지고 오는 객체.
@@ -190,6 +212,15 @@ public class SightDetailFragment extends Fragment {
     }
 
     private void initMapView() {
+        if(Build.VERSION.SDK_INT >= 23) {
+            Log.d("LOG/Detail", "SDK Version : " + Build.VERSION.SDK_INT);
+            if (!PermissionChecker.checkPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)) {
+                Log.d("LOG/Detail", "Permission is nothing and is requested");
+
+                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PermissionChecker.REQUEST_FINE_LOCATION);
+                return ;
+            }
+        }
         // 맵 뷰 생성.
         MapView mapView = new MapView(getActivity());
         // API KEY 적용
@@ -229,6 +260,7 @@ public class SightDetailFragment extends Fragment {
             }
         });
     }
+
 
     // 여행지 이름, 좋아요 수, 상세내용 등의 TextView를 초기화.
     private void initTextView() {
