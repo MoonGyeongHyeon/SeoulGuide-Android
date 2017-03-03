@@ -12,8 +12,20 @@ import test.superdroid.com.seoulguide.R;
 public class BucketFragment extends Fragment {
 
     @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View layout = inflater.inflate(R.layout.f_bucket, container, false);
+
+        if(true) {
+            getFragmentManager().beginTransaction().replace(R.id.bucketMainLayout, new EmptySightFragment()).commit();
+        } else {
+            getFragmentManager().beginTransaction().replace(R.id.bucketMainLayout, new BucketListFragment()).commit();
+        }
+
         return layout;
     }
 }

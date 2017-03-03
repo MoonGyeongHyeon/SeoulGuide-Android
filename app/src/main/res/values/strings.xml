@@ -20,5 +20,6 @@
     <string name="preferNextTest">다음 페이지</string>
     <string name="preferDeleteData">결과 지우기</string>
     <string name="preferGoToSightList">여행지 보러 가기</string>
+    <string name="bucketEmptyList">버킷리스트가 비어있습니다.</string>
 
 </resources>
