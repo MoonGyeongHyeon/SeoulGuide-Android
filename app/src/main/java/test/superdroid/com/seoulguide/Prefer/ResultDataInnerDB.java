@@ -9,7 +9,7 @@ import android.util.Log;
 
 public class ResultDataInnerDB extends SQLiteOpenHelper {
     private static ResultDataInnerDB sInstance = null;
-    private static String sDBName = "PREFER.db";
+    private static String sDBName = "SEOUL_GUIDE.db";
     private static int sVersion = 1;
     private String mTableName = "PREFER";
 
