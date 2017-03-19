@@ -1,8 +1,11 @@
 package test.superdroid.com.seoulguide.Detail;
 
 import android.Manifest;
+import android.content.ContentValues;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -18,6 +21,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -35,6 +39,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -46,6 +51,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import test.superdroid.com.seoulguide.Bucket.BucketInnerDB;
 import test.superdroid.com.seoulguide.R;
 import test.superdroid.com.seoulguide.Util.Network;
 import test.superdroid.com.seoulguide.Util.PermissionChecker;
@@ -77,6 +83,8 @@ public class SightDetailFragment extends Fragment {
     private ReviewRecyclerViewAdapter mReviewAdapter;
     // 메인 이미지 프로그레스 바
     private ProgressBar mProgressBar;
+    // 버킷리스트 추가를 위한 내부 DB
+    private BucketInnerDB mBucketInnerDB;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -85,6 +93,8 @@ public class SightDetailFragment extends Fragment {
         mDetailInfo = new DetailInfo();
 
         mBitmapConverter = new BitmapConverter();
+
+        mBucketInnerDB = BucketInnerDB.getIntance(getContext());
 
         // 홈 프래그먼트 등에서 넘어온 여행지 id와 name을 받아온다.
         Bundle bundle = getArguments();
@@ -125,6 +135,26 @@ public class SightDetailFragment extends Fragment {
             }
         });
         mProgressBar = (ProgressBar) layout.findViewById(R.id.detailMainImageLoadingProgressBar);
+
+        ImageButton bucketImageButton = (ImageButton) layout.findViewById(R.id.detailBucketImageButton);
+        bucketImageButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mDetailInfo != null && mMainImageView.getDrawable() != null) {
+                    ContentValues values = new ContentValues();
+                    values.put("_sight_id", mDetailInfo.getId());
+                    values.put("_sight_name", mDetailInfo.getName());
+                    values.put("_bitmap", getByteArrayFromDrawable(mMainImageView.getDrawable()));
+
+                    mBucketInnerDB.insert(values);
+
+                    Toast.makeText(getContext(), "버킷리스트에 추가되었습니다.", Toast.LENGTH_SHORT).show();
+                    Log.d("LOG/Detail", "Bucket data is putted, id : " + mDetailInfo.getId() + " , name : " + mDetailInfo.getName());
+                } else {
+                    Toast.makeText(getContext(), "잠시 후 다시 시도해주십시오.", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
 
         return layout;
     }
@@ -289,6 +319,15 @@ public class SightDetailFragment extends Fragment {
         // 생성자로 Context와 이미지의 개수를 받는다.
         mAdapter = new SubImageViewPagerAdapter(getContext(), size);
         viewPager.setAdapter(mAdapter);
+    }
+
+    public byte[] getByteArrayFromDrawable(Drawable d) {
+        Bitmap bitmap = ((BitmapDrawable)d).getBitmap();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        byte[] data = stream.toByteArray();
+
+        return data;
     }
 
     private class DetailInfoManager extends AsyncTask<String, Void, String> {
