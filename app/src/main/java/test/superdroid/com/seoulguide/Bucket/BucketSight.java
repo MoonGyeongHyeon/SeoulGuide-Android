@@ -6,6 +6,8 @@ public class BucketSight {
     private Bitmap mSightImage;
     private String mSightName;
     private int mSightId;
+    private double mLocationX;
+    private double mLocationY;
 
     public Bitmap getSightImage() {
         return mSightImage;
@@ -29,5 +31,21 @@ public class BucketSight {
 
     public void setSightId(int mSightId) {
         this.mSightId = mSightId;
+    }
+
+    public double getLocationX() {
+        return mLocationX;
+    }
+
+    public void setLocationX(double mLocationX) {
+        this.mLocationX = mLocationX;
+    }
+
+    public double getLocationY() {
+        return mLocationY;
+    }
+
+    public void setLocationY(double mLocationY) {
+        this.mLocationY = mLocationY;
     }
 }

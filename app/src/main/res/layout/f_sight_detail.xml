@@ -58,9 +58,8 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentRight="true"
                     android:layout_alignParentEnd="true"
-                    android:layout_marginRight="5dp"
-                    android:layout_marginEnd="5dp"
-                    android:layout_marginTop="5dp"
+                    android:layout_marginRight="10dp"
+                    android:layout_marginEnd="10dp"
                     android:layout_below="@id/detailSightNameTextView"
                     android:textSize="21sp"/>
 
@@ -72,7 +71,6 @@
                     android:layout_toLeftOf="@id/detailSightRatingTextView"
                     android:layout_toStartOf="@id/detailSightRatingTextView"
                     android:layout_below="@id/detailSightNameTextView"
-                    android:layout_marginTop="5dp"
                     android:layout_marginRight="7dp"
                     android:layout_marginEnd="7dp"/>
 
@@ -98,24 +96,12 @@
                     android:layout_marginEnd="7dp"/>
 
                 <ImageButton
-                    android:id="@+id/detailPlannerImageButton"
-                    android:layout_width="40dp"
-                    android:layout_height="25dp"
-                    android:background="@drawable/planner"
-                    android:layout_alignParentRight="true"
-                    android:layout_alignParentEnd="true"
-                    android:layout_alignParentBottom="true"
-                    android:layout_marginRight="10dp"
-                    android:layout_marginEnd="10dp"
-                    android:layout_marginBottom="15dp"/>
-
-                <ImageButton
                     android:id="@+id/detailBucketImageButton"
                     android:layout_width="40dp"
                     android:layout_height="25dp"
                     android:background="@drawable/bucket"
-                    android:layout_toLeftOf="@id/detailPlannerImageButton"
-                    android:layout_toStartOf="@id/detailPlannerImageButton"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
                     android:layout_alignParentBottom="true"
                     android:layout_marginRight="15dp"
                     android:layout_marginEnd="15dp"

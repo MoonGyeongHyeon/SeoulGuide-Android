@@ -66,7 +66,7 @@ public class PreferRecyclerViewAdapter extends RecyclerView.Adapter<PreferRecycl
                 sightDetailFragment.setArguments(bundle);
 
                 mFragment.getActivity().getSupportFragmentManager()
-                        .beginTransaction().replace(R.id.fragmentComponentLayout, sightDetailFragment)
+                        .beginTransaction().replace(R.id.preferMainLayout, sightDetailFragment)
                         .addToBackStack(null)
                         .commit();
             }

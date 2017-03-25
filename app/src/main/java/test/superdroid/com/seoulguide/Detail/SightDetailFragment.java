@@ -29,7 +29,6 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
 import net.daum.mf.map.api.MapPOIItem;
 import net.daum.mf.map.api.MapPoint;
 import net.daum.mf.map.api.MapView;
@@ -53,6 +52,7 @@ import java.util.Locale;
 
 import test.superdroid.com.seoulguide.Bucket.BucketInnerDB;
 import test.superdroid.com.seoulguide.R;
+import test.superdroid.com.seoulguide.Util.MapViewManager;
 import test.superdroid.com.seoulguide.Util.Network;
 import test.superdroid.com.seoulguide.Util.PermissionChecker;
 import test.superdroid.com.seoulguide.Util.SharedData;
@@ -73,8 +73,6 @@ public class SightDetailFragment extends Fragment {
     // 다시 상세보기로 돌아올 때 일시중지된 변환 작업을 다시 재개시킨다.
     // 이를 위해 싱크를 맞춰줄 변수.
     private boolean isPausedConverting = false;
-    // 다음 지도 API를 위한 key.
-    private final String mMapKey = "17fd056513f09a6ebe80bdb559e2285d";
     // 맵 뷰를 담을 레이아웃.
     private FrameLayout mMapLayout;
     // 리뷰를 출력할 뷰.
@@ -85,6 +83,7 @@ public class SightDetailFragment extends Fragment {
     private ProgressBar mProgressBar;
     // 버킷리스트 추가를 위한 내부 DB
     private BucketInnerDB mBucketInnerDB;
+    private MapView mMapView;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -111,6 +110,8 @@ public class SightDetailFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        Log.d("LOG/Detail", "onCreateView()");
+
         View layout = inflater.inflate(R.layout.f_sight_detail, container, false);
 
         mSubImageLayout = (LinearLayout) layout.findViewById(R.id.detailSubImageLayout);
@@ -121,6 +122,8 @@ public class SightDetailFragment extends Fragment {
         toolbar.setTitle(title);
 
         mMapLayout = (FrameLayout) layout.findViewById(R.id.detailMapLayout);
+        mMapView = MapViewManager.getMapView(getActivity(), mMapLayout);
+
         mReviewRecyclerView = (RecyclerView) layout.findViewById(R.id.detailReviewRecyclerView);
         mReviewRecyclerView.setNestedScrollingEnabled(false);
 
@@ -140,16 +143,25 @@ public class SightDetailFragment extends Fragment {
         bucketImageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // 상세정보를 전부 로드한 상태인지를 확인
                 if (mDetailInfo != null && mMainImageView.getDrawable() != null) {
-                    ContentValues values = new ContentValues();
-                    values.put("_sight_id", mDetailInfo.getId());
-                    values.put("_sight_name", mDetailInfo.getName());
-                    values.put("_bitmap", getByteArrayFromDrawable(mMainImageView.getDrawable()));
+                    // 이미 추가한 여행지인지 확인
+                    // 여행지가 존재하지 않을 때 추가
+                    if (!mBucketInnerDB.isExistedSight(mDetailInfo.getId())) {
+                        ContentValues values = new ContentValues();
+                        values.put("_sight_id", mDetailInfo.getId());
+                        values.put("_sight_name", mDetailInfo.getName());
+                        values.put("_sight_x", mDetailInfo.getLocationX());
+                        values.put("_sight_y", mDetailInfo.getLocationY());
+                        values.put("_bitmap", getByteArrayFromDrawable(mMainImageView.getDrawable()));
 
-                    mBucketInnerDB.insert(values);
+                        mBucketInnerDB.insert(values);
 
-                    Toast.makeText(getContext(), "버킷리스트에 추가되었습니다.", Toast.LENGTH_SHORT).show();
-                    Log.d("LOG/Detail", "Bucket data is putted, id : " + mDetailInfo.getId() + " , name : " + mDetailInfo.getName());
+                        Toast.makeText(getContext(), "버킷리스트에 추가되었습니다.", Toast.LENGTH_SHORT).show();
+                        Log.d("LOG/Detail", "Bucket data is putted, id : " + mDetailInfo.getId() + " , name : " + mDetailInfo.getName());
+                    } else {
+                        Toast.makeText(getContext(), "이미 추가한 여행지입니다.", Toast.LENGTH_SHORT).show();
+                    }
                 } else {
                     Toast.makeText(getContext(), "잠시 후 다시 시도해주십시오.", Toast.LENGTH_SHORT).show();
                 }
@@ -189,15 +201,6 @@ public class SightDetailFragment extends Fragment {
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        Log.d("LOG/Detail", "onDestroyView()");
-        // 맵 뷰는 앱 내에 반드시 하나만 존재해야 하므로 이 프래그먼트가 사라질 때 맵 뷰도 사라지도록 설정.
-        if(mMapLayout != null)
-            mMapLayout.removeAllViews();
-    }
-
-    @Override
     public void onDestroy() {
         super.onDestroy();
         Log.d("LOG/Detail", "onDestroy()");
@@ -217,7 +220,7 @@ public class SightDetailFragment extends Fragment {
             if(PermissionChecker.verifyPermission(grantResults)) {
                 // 동의.
                 Log.d("LOG/Detail", "Permission is granted");
-                initMapView();
+                initMapView(mMapView);
             } else {
                 // 거절.
                 Log.d("LOG/Detail", "Permission is denied");
@@ -241,7 +244,7 @@ public class SightDetailFragment extends Fragment {
         }
     }
 
-    private void initMapView() {
+    private void initMapView(MapView mapView) {
         if(Build.VERSION.SDK_INT >= 23) {
             Log.d("LOG/Detail", "SDK Version : " + Build.VERSION.SDK_INT);
             if (!PermissionChecker.checkPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)) {
@@ -251,12 +254,7 @@ public class SightDetailFragment extends Fragment {
                 return ;
             }
         }
-        // 맵 뷰 생성.
-        MapView mapView = new MapView(getActivity());
-        // API KEY 적용
-        mapView.setDaumMapApiKey(mMapKey);
-        // 맵뷰 레이아웃에 추가.
-        mMapLayout.addView(mapView);
+
         // 맵 뷰의 중심점을 이동시키고 줌인/줌아웃을 가능하게 한다.
         mapView.setMapCenterPointAndZoomLevel(MapPoint.mapPointWithGeoCoord(mDetailInfo.getLocationX(), mDetailInfo.getLocationY()), 1, true);
         mapView.zoomIn(true);
@@ -264,7 +262,7 @@ public class SightDetailFragment extends Fragment {
 
         // 위치를 파악하기 쉽게 하기 위해 마커를 추가한다.
         MapPOIItem marker = new MapPOIItem();
-        marker.setItemName("Sight Marker");
+        marker.setItemName(mDetailInfo.getName());
         marker.setTag(0);
         marker.setMapPoint(MapPoint.mapPointWithGeoCoord(mDetailInfo.getLocationX(), mDetailInfo.getLocationY()));
         marker.setMarkerType(MapPOIItem.MarkerType.BluePin);
@@ -407,7 +405,8 @@ public class SightDetailFragment extends Fragment {
                             String avgStr = String.format(Locale.getDefault() ,"%.1f", sumPoint / peopleCount);
                             mDetailInfo.setRating(Double.valueOf(avgStr));
                         }
-                        initMapView();
+                        initMapView(mMapView);
+
                         Log.d("LOG/Detail", "Sight name : " + mDetailInfo.getName());
                     }
                     // index 1.

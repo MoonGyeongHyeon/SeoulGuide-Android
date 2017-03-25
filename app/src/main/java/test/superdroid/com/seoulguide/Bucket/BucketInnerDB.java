@@ -15,7 +15,7 @@ import java.util.List;
 public class BucketInnerDB extends SQLiteOpenHelper {
     private static BucketInnerDB sInstance = null;
     private static String sDBName = "SEOUL_GUIDE_BUCKET.db";
-    private static int sVersion = 1;
+    private static int sVersion = 7;
     private String mTableName = "BUCKET";
 
     private BucketInnerDB(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
@@ -34,7 +34,9 @@ public class BucketInnerDB extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE IF NOT EXISTS " + mTableName + "(" +
                 "_bitmap BLOB, " +
                 "_sight_name TEXT, " +
-                "_sight_id INTEGER" +
+                "_sight_id INTEGER, " +
+                "_sight_x REAL, " +
+                "_sight_y REAL" +
                 ");");
         Log.d("LOG/Bucket", "Inner DB is created");
     }
@@ -46,11 +48,16 @@ public class BucketInnerDB extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if (oldVersion < newVersion) {
+            Log.d("LOG/Bucket", "Inner DB is upgraded");
+            db.execSQL("DROP TABLE IF EXISTS " + mTableName);
+            onCreate(db);
+        }
     }
 
     public void insert(ContentValues values) {
         getWritableDatabase().insert(mTableName, null, values);
-        Log.d("LOG/Bucket", "Sight data is inserted");
+        Log.d("LOG/Bucket", "Sight "+ values.get("_sight_name") +" is inserted");
     }
     public boolean isEmpty() {
         Cursor c = getReadableDatabase().rawQuery("select * from " + mTableName, null);
@@ -62,7 +69,8 @@ public class BucketInnerDB extends SQLiteOpenHelper {
         // 저장된 버킷리스트를 담을 리스트 생성
         List<BucketSight> bucketSightList = new ArrayList<>();
 
-        Cursor c = getReadableDatabase().rawQuery("select _index from " + mTableName, null);
+        Cursor c = getReadableDatabase().rawQuery("select * from " + mTableName, null);
+
         while (c.moveToNext()) {
             // 버킷리스트 하나의 객체 생성
             BucketSight bucketSight = new BucketSight();
@@ -70,6 +78,11 @@ public class BucketInnerDB extends SQLiteOpenHelper {
             bucketSight.setSightId(c.getInt(c.getColumnIndex("_sight_id")));
             // 여행지의 이름 가져옴
             bucketSight.setSightName(c.getString(c.getColumnIndex("_sight_name")));
+            // 여행지의 X 좌표를 가져옴
+            bucketSight.setLocationX(c.getDouble(c.getColumnIndex("_sight_x")));
+            // 여행지의 Y 좌표를 가져옴
+            bucketSight.setLocationY(c.getDouble(c.getColumnIndex("_sight_y")));
+
             // 현재 DB에는 이미지가 BLOB 형태로 저장되어 있기 때문에 Bitmap 형태로 바꿔주어야 한다.
             // 일단 Bytes를 가져온다.
             byte[] imageBytes = c.getBlob(c.getColumnIndex("_bitmap"));
@@ -82,5 +95,16 @@ public class BucketInnerDB extends SQLiteOpenHelper {
         }
         c.close();
         return bucketSightList;
+    }
+    public boolean isExistedSight(int sightId) {
+        Cursor c = getReadableDatabase().rawQuery("select _sight_id from " + mTableName + " where _sight_id = ?",
+                new String[] {String.valueOf(sightId)});
+        // 존재한다면 true, 존재하지 않는다면 false
+        return c.moveToNext();
+    }
+
+    public void delete(int sightId) {
+        getWritableDatabase().delete(mTableName,"_sight_id=?", new String[] {String.valueOf(sightId)} );
+        Log.d("LOG/Bucket", "Remove bucket sight : " + sightId);
     }
 }
